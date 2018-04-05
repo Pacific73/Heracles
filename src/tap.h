@@ -2,45 +2,61 @@
 #define TAP_H
 
 #include "helpers.h"
+#include "db_driver.h"
 #include <pthread.h>
+#include <unistd.h>
 
 class Tap {
   private:
-    bool enabled;
-    bool growth_allowed;
+    bool BE_enabled;
+    bool BE_growth_allowed;
+
+    size_t total_cores;
+    size_t BE_cores;
+
+    size_t total_cache; // temporarily writen as this form
+    size_t BE_cache;
+
+    pid_t LC_pid;
+    pid_t BE_pid;
+
+    DatabaseDriver db;
+
     pthread_mutex_t mutex;
 
+    void get_total_cache();
+    void get_total_cores();
+    void init_database();
+
+    void run_new_BE();
+    void BE_end();
+
   public:
-    Tap() : enabled(false), growth_allowed(false) {
-        int res = pthread_mutex_init(&mutex, nullptr);
-        if (res != 0) {
-            print_err("Tap init failed.");
-        }
-    }
+    Tap();
 
-    bool is_enabled() const { return enabled; }
-    bool is_growth_allowed() const { return growth_allowed; }
+    bool is_BE_enabled() const { return BE_enabled; }
 
-    void enable_BE() {
-        pthread_mutex_lock(&mutex);
-        enabled = true;
-        pthread_mutex_unlock(&mutex);
-    }
-    void disable_BE() {
-        pthread_mutex_lock(&mutex);
-        enabled = false;
-        pthread_mutex_unlock(&mutex);
-    }
-    void enable_growth() {
-        pthread_mutex_lock(&mutex);
-        growth_allowed = true;
-        pthread_mutex_unlock(&mutex);
-    }
-    void disable_growth() {
-        pthread_mutex_lock(&mutex);
-        growth_allowed = false;
-        pthread_mutex_unlock(&mutex);
-    }
+    bool is_BE_growth_allowed() const { return BE_growth_allowed; }
+
+    void set_BE_enabled(bool e);
+    
+    void set_BE_growth_enabled(bool e);
+
+    // bound check
+
+    void BE_cores_inc(int inc);
+
+    void BE_cores_dec(int dec);
+
+    void BE_cache_grow();
+
+    void BE_cache_roll_back();
+    
+    // bound check
+
+    bool update_cores();
+
+    bool update_cache();
 };
 
 #endif
