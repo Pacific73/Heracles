@@ -30,7 +30,7 @@ class LoadInfo {
     LoadInfo() : cur_load(0), max_load(0), complete(false) {}
 
     double load_percent();
-}
+};
 
 class InfoPuller {
   private:
@@ -43,6 +43,6 @@ class InfoPuller {
     InfoPuller();
     LatencyInfo pull_latency_info();
     LoadInfo pull_load_info();
-}
+};
 
 #endif

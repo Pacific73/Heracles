@@ -14,7 +14,7 @@ class Tap {
     size_t total_cores;
     size_t BE_cores;
 
-    size_t total_cache; // temporarily writen as this form
+    size_t total_cache; // temporarily written as this form
     size_t BE_cache;
 
     pid_t LC_pid;
@@ -30,6 +30,9 @@ class Tap {
 
     void run_new_BE();
     void BE_end();
+
+    bool update_cores();
+    bool update_cache();
 
   public:
     Tap();
@@ -54,9 +57,6 @@ class Tap {
     
     // bound check
 
-    bool update_cores();
-
-    bool update_cache();
 };
 
 #endif
