@@ -20,19 +20,14 @@ class Tap {
     pid_t LC_pid;
     pid_t BE_pid;
 
-    DatabaseDriver db;
-
+    DatabaseDriver *db_d;
+    
     pthread_mutex_t mutex;
 
-    void get_total_cache();
-    void get_total_cores();
-    void init_database();
+    void init_database_driver();
 
     void run_new_BE();
     void BE_end();
-
-    bool update_cores();
-    bool update_cache();
 
   public:
     Tap();
@@ -45,17 +40,6 @@ class Tap {
     
     void set_BE_growth_enabled(bool e);
 
-    // bound check
-
-    void BE_cores_inc(int inc);
-
-    void BE_cores_dec(int dec);
-
-    void BE_cache_grow();
-
-    void BE_cache_roll_back();
-    
-    // bound check
 
 };
 

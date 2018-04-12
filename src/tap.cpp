@@ -3,29 +3,21 @@
 
 Tap::Tap() : BE_enabled(false), BE_growth_allowed(false) {
     if (pthread_mutex_init(&mutex, nullptr) != 0) {
-        print_err("Tap init failed.");
+        print_err("[TAP] Tap init failed.");
     }
-    get_total_cores();
-    get_total_cache();
+
     init_database();
     
     LC_pid = get_opt("HERACLES_LC_PID", -1);
     if(LC_pid == -1) {
-        print_err("can't recognize LC task.");
+        print_err("[TAP] can't recognize LC task.");
         exit(-1);
     }
 }
 
-void Tap::get_total_cores() {
-
-}
-
-void Tap::get_total_cache() {
-
-}
-
-void Tap::init_database() {
-
+void Tap::init_database_driver() {
+    db = new DatabaseDriver("path");
+    //...
 }
 
 void Tap::BE_end() {
@@ -56,22 +48,3 @@ void Tap::set_BE_growth_enabled(bool e) {
     BE_growth_allowed = e;
     pthread_mutex_unlock(&mutex);
 }
-
-void Tap::BE_cores_inc(int inc) {
-
-}
-
-void Tap::BE_cores_dec(int dec) {
-
-}
-
-void Tap::BE_cache_grow() {
-
-}
-
-void Tap::BE_cache_roll_back() {
-
-}
-
-bool Tap::update_cores() {}
-bool Tap::update_cache() {}

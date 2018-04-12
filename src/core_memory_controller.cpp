@@ -2,8 +2,12 @@
 #include "helpers.h"
 
 
-CoreMemoryController::CoreMemoryController(Tap *t, InfoPuller *i): tap(t), puller(i) {
+CoreMemoryController::CoreMemoryController(Tap *t, InfoPuller *i, pid_t lc): tap(t), puller(i) {
     state = STATE::GROW_LLC;
+
+    init_cpu_driver(lc);
+    init_memory_driver();
+    init_cache_driver();
 }
 
 void CoreMemoryController::load_config() {
@@ -12,32 +16,18 @@ void CoreMemoryController::load_config() {
     sleep_time = get_opt("CORE_MEMORY_SLEEP_TIME", 2);
 }
 
-double CoreMemoryController::measure_dram_bw() {
-
+void CoreMemoryController::init_cpu_driver(pid_t lc) {
+    std::string path = get_opt("CGROUPS_DIR", "/sys/fs/cgroups");
+    cpu_d = new CpuDriver(path, lc);
+    //...
 }
 
-double CoreMemoryController::predicted_total_bw() {
-
+void CoreMemoryController::init_memory_driver() {
+    mm_d = new MemoryDriver();
 }
 
-double CoreMemoryController::LC_bw() {
-    
-}
-
-double CoreMemoryController::BE_bw() {
-
-}
-
-double CoreMemoryController::BE_bw_per_core() {
-
-}
-
-bool CoreMemoryController::core_update() {
-
-}
-
-bool CoreMemoryController::cache_update() {
-
+void CoreMemoryController::init_cache_driver() {
+    cc_d = new CacheDriver();
 }
 
 int CoreMemoryController::run() {
@@ -49,10 +39,10 @@ int CoreMemoryController::run() {
 
     while(true) {
         nanosleep(&ts, nullptr);
-        double total_bw = measure_dram_bw();
+        double total_bw = mm_d->measure_dram_bw();
         if(total_bw > dram_limit) {
             double overage = total_bw - dram_limit;
-            tap->BE_cores_dec(overage / BE_bw_per_core());
+            cpu_d->BE_cores_dec(overage / mm_d->BE_bw_per_core());
             continue;
 
         }
@@ -60,14 +50,14 @@ int CoreMemoryController::run() {
             continue;
         }
         if(state == STATE::GROW_LLC) {
-            if(predicted_total_bw() > dram_limit) {
+            if(mm_d->predicted_total_bw() > dram_limit) {
                 state = STATE::GROW_CORES;
             } else {
-                tap->BE_cache_grow();
+                cc_d->BE_cache_grow();
                 // nanosleep? to wait for CAT take effect
-                double bw_derivative = measure_dram_bw() - total_bw();
+                double bw_derivative = mm_d->measure_dram_bw() - mm_d->total_bw();
                 if(bw_derivative >= 0) {
-                    tap->BE_cache_roll_back();
+                    cc_d->BE_cache_roll_back();
                     state = STATE::GROW_CORES;
                 }
                 // if(!benefit()) {                    // benefit() ???
@@ -75,12 +65,12 @@ int CoreMemoryController::run() {
                 // }
             }
         } else if(state == STATE::GROW_CORES) {
-            double needed = LC_bw() + BE_bw() + BE_bw_per_core();
+            double needed = mm_d->LC_bw() + mm_d->BE_bw() + mm_d->BE_bw_per_core();
             double slack = puller->pull_latency_info().slack_95();
             if(needed > dram_limit) {
                 state = STATE::GROW_LLC;
             } else if(tap->slack > 0.10) { // !!!!->slack!!!! 0.10!!!!
-                tap->BE_cores_inc(1);
+                cpu_d->BE_cores_inc(1);
             }
         }
     }

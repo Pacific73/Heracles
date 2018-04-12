@@ -28,6 +28,8 @@ InfoPuller::InfoPuller() {
     std::string default_load_file = prefix + "load_info";
     std::string default_max_load_file = prefix + "max_load_info";
 
+    //mkdir!!!
+
     latency_path = get_opt("HERACLES_LATENCY_FILE", default_latency_file);
     max_latency_path =
         get_opt("HERACLES_MAX_LATENCY_FILE", default_max_latency_file);
