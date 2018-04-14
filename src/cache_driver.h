@@ -8,7 +8,9 @@ public:
     CacheDriver();
     
     bool BE_cache_grow();
-    bool BE_cache_roll_back()
+    bool BE_cache_roll_back();
+
+    void clear();
 };
 
 #endif

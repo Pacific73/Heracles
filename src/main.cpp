@@ -1,4 +1,3 @@
-#include <iostream>
 #include "heracles.h"
 
 int main(int argc, char** argv) {

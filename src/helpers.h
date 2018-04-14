@@ -13,7 +13,8 @@ static void print_err(std::string msg) {
     std::cerr << "[Heracles] " << msg << std::endl;
 }
 
-template <typename T> static T get_opt(const char *name, T defVal) {
+template <typename T> 
+static T get_opt(const char *name, T defVal) {
     const char *opt = getenv(name);
 
     std::cout << name << " = " << opt << std::endl;

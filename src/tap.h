@@ -1,15 +1,25 @@
 #ifndef TAP_H
 #define TAP_H
 
-#include "helpers.h"
 #include "db_driver.h"
+#include "helpers.h"
 #include <pthread.h>
+#include <string>
 #include <unistd.h>
+
+class CpuDriver;
+
+enum TAPSTATE {
+    DISABLED,
+    PAUSED,
+    ENABLED
+};
 
 class Tap {
   private:
-    bool BE_enabled;
-    bool BE_growth_allowed;
+    TAPSTATE _state;
+
+    CpuDriver *cpu_d;
 
     size_t total_cores;
     size_t BE_cores;
@@ -17,30 +27,35 @@ class Tap {
     size_t total_cache; // temporarily written as this form
     size_t BE_cache;
 
-    pid_t LC_pid;
-    pid_t BE_pid;
+    pid_t _LC_pid;
+    pid_t _BE_pid;
 
     DatabaseDriver *db_d;
-    
+
     pthread_mutex_t mutex;
 
     void init_database_driver();
 
-    void run_new_BE();
     void BE_end();
+
+    std::string get_next_command();
 
   public:
     Tap();
 
-    bool is_BE_enabled() const { return BE_enabled; }
+    void set_cpu_d(CpuDriver *c) { cpu_d = c; }
 
-    bool is_BE_growth_allowed() const { return BE_growth_allowed; }
+    pid_t BE_pid() const { return _BE_pid; }
 
-    void set_BE_enabled(bool e);
-    
-    void set_BE_growth_enabled(bool e);
+    pid_t LC_pid() const { return _LC_pid; }
 
+    TAPSTATE state() const { return _state; }
 
+    void set_state(TAPSTATE t);
+
+    void cool_down_little();
+
+    int run();
 };
 
 #endif

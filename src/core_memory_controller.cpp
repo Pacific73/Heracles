@@ -1,34 +1,30 @@
 #include "core_memory_controller.h"
 #include "helpers.h"
 
-
-CoreMemoryController::CoreMemoryController(Tap *t, InfoPuller *i, pid_t lc): tap(t), puller(i) {
+CoreMemoryController::CoreMemoryController(Tap *t, InfoPuller *i)
+    : tap(t), puller(i) {
     state = STATE::GROW_LLC;
 
-    init_cpu_driver(lc);
+    init_cpu_driver();
     init_memory_driver();
     init_cache_driver();
 }
 
 void CoreMemoryController::load_config() {
 
-    dram_limit = get_opt("HERACLES_DRAM_LIMIT", 1024);
-    sleep_time = get_opt("CORE_MEMORY_SLEEP_TIME", 2);
+    dram_limit = get_opt<double>("HERACLES_DRAM_LIMIT", 1024);
+    sleep_time = get_opt<time_t>("CORE_MEMORY_SLEEP_TIME", 2);
 }
 
-void CoreMemoryController::init_cpu_driver(pid_t lc) {
-    std::string path = get_opt("CGROUPS_DIR", "/sys/fs/cgroups");
-    cpu_d = new CpuDriver(path, lc);
+void CoreMemoryController::init_cpu_driver() {
+    cpu_d = new CpuDriver(tap);
+    tap->set_cpu_d(cpu_d);
     //...
 }
 
-void CoreMemoryController::init_memory_driver() {
-    mm_d = new MemoryDriver();
-}
+void CoreMemoryController::init_memory_driver() { mm_d = new MemoryDriver(); }
 
-void CoreMemoryController::init_cache_driver() {
-    cc_d = new CacheDriver();
-}
+void CoreMemoryController::init_cache_driver() { cc_d = new CacheDriver(); }
 
 int CoreMemoryController::run() {
     load_config();
@@ -37,39 +33,56 @@ int CoreMemoryController::run() {
     ts.tv_sec = sleep_time;
     ts.tv_nsec = 0;
 
-    while(true) {
+    while (true) {
         nanosleep(&ts, nullptr);
+
+        if (tap->BE_pid() == -1 || tap->state() == TAPSTATE::DISABLED) {
+            cpu_d->clear();
+            mm_d->clear();
+            cc_d->clear();
+            continue;
+        } // if no BE task is running (or BE is disabled), give all capabilities
+          // to LC
+
+        if (tap->state() == TAPSTATE::PAUSED) {
+            continue;
+        } // if BE growth is not allowed, keep current settings
+
         double total_bw = mm_d->measure_dram_bw();
-        if(total_bw > dram_limit) {
+        if (total_bw > dram_limit) {
             double overage = total_bw - dram_limit;
             cpu_d->BE_cores_dec(overage / mm_d->BE_bw_per_core());
             continue;
+        } // if memory bw is overused, cut the extra tasks
 
-        }
-        if(!tap->is_enabled()) {
-            continue;
-        }
-        if(state == STATE::GROW_LLC) {
-            if(mm_d->predicted_total_bw() > dram_limit) {
+        if (state == STATE::GROW_LLC) {
+
+            double old_bw = mm_d->measure_dram_bw();
+            cc_d->BE_cache_grow();
+            // nanosleep? to wait for CAT take effect
+
+            double new_bw = mm_d->measure_dram_bw();
+            if (new_bw > dram_limit) {
                 state = STATE::GROW_CORES;
-            } else {
-                cc_d->BE_cache_grow();
-                // nanosleep? to wait for CAT take effect
-                double bw_derivative = mm_d->measure_dram_bw() - mm_d->total_bw();
-                if(bw_derivative >= 0) {
-                    cc_d->BE_cache_roll_back();
-                    state = STATE::GROW_CORES;
-                }
-                // if(!benefit()) {                    // benefit() ???
-                //     state = STATE::GROW_CORES;
-                // }
+                continue;
             }
-        } else if(state == STATE::GROW_CORES) {
-            double needed = mm_d->LC_bw() + mm_d->BE_bw() + mm_d->BE_bw_per_core();
+
+            double derivative = new_bw - old_bw;
+            if (derivative >= 0) {
+                cc_d->BE_cache_roll_back();
+                state = STATE::GROW_CORES;
+            }
+            // if(!benefit()) {                    // benefit() ???
+            //     state = STATE::GROW_CORES;
+            // }
+
+        } else if (state == STATE::GROW_CORES) {
+            double needed = mm_d->LC_bw() + mm_d->BE_bw() +
+                            mm_d->BE_bw_per_core(); // one more BE core
             double slack = puller->pull_latency_info().slack_95();
-            if(needed > dram_limit) {
+            if (needed > dram_limit) {
                 state = STATE::GROW_LLC;
-            } else if(tap->slack > 0.10) { // !!!!->slack!!!! 0.10!!!!
+            } else if (slack > 0.10) { // !!!!->slack!!!! 0.10!!!!
                 cpu_d->BE_cores_inc(1);
             }
         }

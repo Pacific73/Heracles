@@ -1,9 +1,12 @@
 #ifndef CPU_DRIVER
 #define CPU_DRIVER
 
+#include "tap.h"
+
 class CpuDriver {
   private:
     std::string path;
+    Tap *tap;
 
     size_t BE_cores;
     size_t total_cores;
@@ -19,13 +22,13 @@ class CpuDriver {
     bool update();
 
   public:
-    CpuDriver(std::string p, pid_t lc);
+    CpuDriver(Tap *t);
 
-    size_t total_cores() const;
+    size_t total_core_num() const;
 
     bool set_new_BE_task(pid_t pid);
 
-    void end_BE_task();
+    void clear();
 
     bool BE_cores_inc(size_t inc); // bound check
 

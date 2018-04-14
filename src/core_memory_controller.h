@@ -10,12 +10,11 @@
 enum STATE {
     GROW_LLC,
     GROW_CORES
-}
+};
 
 class CoreMemoryController {
   private:
     Tap *tap;
-
     InfoPuller *puller;
 
     CpuDriver *cpu_d;
@@ -23,11 +22,12 @@ class CoreMemoryController {
     CacheDriver *cc_d;
 
     time_t sleep_time;
-
     double dram_limit; // mean to be percentile,
                        // but need to set as numerical numbers.
 
     STATE state;
+
+    pid_t LC_pid;
 
     void init_cpu_driver();
     void init_memory_driver();
@@ -36,7 +36,7 @@ class CoreMemoryController {
     void load_config();
 
   public:
-    CoreMemoryController(Tap *t, InfoPuller *i, pid_t lc);
+    CoreMemoryController(Tap *t, InfoPuller *i);
 
     int run();
 };

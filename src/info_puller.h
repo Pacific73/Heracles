@@ -1,6 +1,8 @@
 #ifndef INFO_PULLER_H
 #define INFO_PULLER_H
 
+#include <iostream>
+
 class LatencyInfo {
   private:
     double cur_95;
@@ -12,7 +14,7 @@ class LatencyInfo {
   public:
     friend class InfoPuller;
 
-    Latency() : cur_95(0), cur_99(0), cur_max(0), complete(false) {}
+    LatencyInfo() : cur_95(0), cur_99(0), cur_max(0), complete(false) {}
 
     double slack_95();
     double slack_99();
@@ -37,7 +39,7 @@ class InfoPuller {
     std::string latency_path;
     std::string max_latency_path;
     std::string max_load_path;
-    str::string load_path;
+    std::string load_path;
 
   public:
     InfoPuller();

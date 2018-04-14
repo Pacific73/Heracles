@@ -1,6 +1,8 @@
 #include "info_puller.h"
 #include <fstream>
 #include <iostream>
+#include <unistd.h>
+#include "helpers.h"
 
 double LatencyInfo::slack_95() {
     if (slo_latency == 0)
@@ -11,7 +13,7 @@ double LatencyInfo::slack_95() {
 double LatencyInfo::slack_99() {
     if (slo_latency == 0)
         return 0;
-    return (clo_latency - cur_99) / slo_latency;
+    return (slo_latency - cur_99) / slo_latency;
 }
 
 double LoadInfo::load_percent() {
@@ -34,13 +36,13 @@ InfoPuller::InfoPuller() {
     max_latency_path =
         get_opt("HERACLES_MAX_LATENCY_FILE", default_max_latency_file);
     load_path = get_opt("HERACLES_LOAD_FILE", default_load_file);
-    max_load_file = get_opt("HERACLES_MAX_LOAD_FILE", default_max_load_file);
+    max_load_path = get_opt("HERACLES_MAX_LOAD_FILE", default_max_load_file);
 }
 
 LatencyInfo InfoPuller::pull_latency_info() {
     LatencyInfo ret;
 
-    ifstream latency_in(latency_path);
+    std::ifstream latency_in(latency_path);
     if (!latency_in.is_open() || !latency_in.eof()) {
         print_err("can't open latency file.");
         return ret;
@@ -48,7 +50,7 @@ LatencyInfo InfoPuller::pull_latency_info() {
     latency_in >> ret.cur_95 >> ret.cur_99 >> ret.cur_max;
     latency_in.close();
 
-    ifstream max_latency_in(max_latency_path);
+    std::ifstream max_latency_in(max_latency_path);
     if (!max_latency_in.is_open() || !max_latency_in.eof()) {
         print_err("can't open max_latency file.");
         return ret;
@@ -64,7 +66,7 @@ LoadInfo InfoPuller::pull_load_info() {
 
     LoadInfo ret;
 
-    ifstream load_in(load_path);
+    std::ifstream load_in(load_path);
     if (!load_in.is_open() || !load_in.eof()) {
         print_err("can't read load file.");
         return ret;
@@ -72,7 +74,7 @@ LoadInfo InfoPuller::pull_load_info() {
     load_in >> ret.cur_load;
     load_in.close();
 
-    ifstream max_load_in(max_load_path);
+    std::ifstream max_load_in(max_load_path);
     if (!max_load_in.is_open() || !max_load_in.eof()) {
         print_err("can't read max_load file.");
         return ret;

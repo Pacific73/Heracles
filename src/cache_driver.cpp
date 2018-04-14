@@ -1,9 +1,17 @@
 #include "cache_driver.h"
 
-void CacheDriver::BE_cache_grow() {
+CacheDriver::CacheDriver() {
 
 }
 
-void CacheDriver::BE_cache_roll_back() {
+bool CacheDriver::BE_cache_grow() {
 
+}
+
+bool CacheDriver::BE_cache_roll_back() {
+
+}
+
+void CacheDriver::clear() {
+    
 }

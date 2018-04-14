@@ -7,6 +7,11 @@
 #include "top_controller.h"
 #include <pthread.h>
 
+void *run_cm_ctr(void *p) {
+    CoreMemoryController *cm_ctr = reinterpret_cast<CoreMemoryController *>(p);
+    cm_ctr->run();
+}
+
 class Heracles {
   private:
     Tap *tap;
@@ -23,11 +28,11 @@ class Heracles {
         cm_ctr = new CoreMemoryController(tap, puller);
         t_ctr = new TopController(tap, puller);
     }
-    
+
     void exec() {
         int errno;
         pthread_t cm;
-        errno = pthread_create(&cm, nullptr, cm_ctr->run, nullptr);
+        errno = pthread_create(&cm, nullptr, run_cm_ctr, cm_ctr);
         if (errno != 0) {
             print_err("can't create core_memory_controller.");
             exit(-1);

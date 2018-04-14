@@ -8,12 +8,14 @@ class MemoryDriver {
     std::string path;
 
   public:
-    MemoryDriver(std::string p);
+    MemoryDriver();
     double measure_dram_bw();
     double predicted_total_bw();
     double LC_bw();
     double BE_bw();
     double BE_bw_per_core();
+
+    void clear();
 };
 
 #endif

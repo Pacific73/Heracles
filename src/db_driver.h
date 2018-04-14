@@ -8,7 +8,6 @@ class DatabaseDriver {
   public:
     DatabaseDriver(std::string path);
     std::string next_command();
-    bool finish_task();
 };
 
 #endif
