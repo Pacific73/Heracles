@@ -12,6 +12,11 @@ void *run_cm_ctr(void *p) {
     cm_ctr->run();
 }
 
+void* run_tap(void* p) {
+    Tap* tap = reinterpret_cast<Tap*>(p);
+    tap->run();
+}
+
 class Heracles {
   private:
     Tap *tap;
@@ -32,9 +37,16 @@ class Heracles {
     void exec() {
         int errno;
         pthread_t cm;
+
+        errno = pthread_create(&cm, nullptr, tap, tap);
+        if (errno != 0) {
+            print_err("[HARACLES] can't create core_memory_controller.");
+            exit(-1);
+        }
+
         errno = pthread_create(&cm, nullptr, run_cm_ctr, cm_ctr);
         if (errno != 0) {
-            print_err("can't create core_memory_controller.");
+            print_err("[HARACLES] can't create core_memory_controller.");
             exit(-1);
         }
 
