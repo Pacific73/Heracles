@@ -1,6 +1,8 @@
 CXX = g++
 
-CXXFLAGS = -g -Wall -O2 -std=c++11
+LIBDIR ?= ../lib/headers
+
+CXXFLAGS = -g -Wall -O2 -std=c++11 -I$(LIBDIR)
 
 LDFLAGS = -pthread
 

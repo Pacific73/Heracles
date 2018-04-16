@@ -9,8 +9,16 @@
 #define OPT_LC 0
 #define OPT_BE 1
 
+static bool debug = false;
+
+static void set_debug(bool d) {
+    debug = d;
+}
+
 static void print_err(std::string msg) {
-    std::cerr << "[Heracles] " << msg << std::endl;
+    if(debug) {
+        std::cerr << "[Heracles] - " << msg << std::endl;
+    }
 }
 
 template <typename T> 

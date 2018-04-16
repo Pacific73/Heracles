@@ -5,9 +5,9 @@ CoreMemoryController::CoreMemoryController(Tap *t, InfoPuller *i)
     : tap(t), puller(i) {
     state = STATE::GROW_LLC;
 
+    init_cache_driver();
     init_cpu_driver();
     init_memory_driver();
-    init_cache_driver();
 }
 
 void CoreMemoryController::load_config() {
@@ -17,7 +17,7 @@ void CoreMemoryController::load_config() {
 }
 
 void CoreMemoryController::init_cpu_driver() {
-    cpu_d = new CpuDriver(tap);
+    cpu_d = new CpuDriver(tap, cc_d);
     tap->set_cpu_d(cpu_d);
     //...
 }

@@ -2,11 +2,13 @@
 #define CPU_DRIVER
 
 #include "tap.h"
+#include "cache_driver.h"
 
 class CpuDriver {
   private:
     std::string path;
     Tap *tap;
+    CacheDriver *cc_d;
 
     size_t BE_cores;
     size_t total_cores;
@@ -17,12 +19,14 @@ class CpuDriver {
 
     bool init_cgroups_dir();
 
-    bool set_pid_cores(size_t type, size_t left, size_t right);
+    bool init_core_num();
+
+    bool set_cores_for_pid(size_t type, size_t left, size_t right);
 
     bool update();
 
   public:
-    CpuDriver(Tap *t);
+    CpuDriver(Tap *t, CacheDriver* cd);
 
     size_t total_core_num() const;
 
