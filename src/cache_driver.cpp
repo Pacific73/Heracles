@@ -41,25 +41,11 @@ CacheDriver::CacheDriver() {
 }
 
 void CacheDriver::init_masks() {
-    uint64_t init;
-
     sys_bits = min_bits / 8;
-    init = 0;
-    for (size_t i = 0; i < sys_bits; ++i)
-        init = init << 1 + 1;
-    sys_mask = init;
-
-    BE_bits = 1;
-    init = 1;
-    init = init << (min_bits - 1);
-    BE_mask = init;
-
-    LC_bits = min_bits - sys_bits - 1;
-    init = 0;
-    for (size_t i = 0; i < LC_bits; ++i)
-        init = init << 1 + 1;
-    init = init << sys_bits;
-    LC_mask = init;
+    BE_bits = 0;
+    LC_bits = min_bits - sys_bits;
+    
+    update_masks();
 }
 
 bool CacheDriver::intel_init() {
@@ -159,8 +145,74 @@ bool CacheDriver::update_allocation() {
     return true;
 }
 
-bool CacheDriver::BE_cache_grow() {}
+bool CacheDriver::BE_cache_grow() {
+    size_t max_BE_bits = min_bits - sys_bits - 1;
+    if (BE_bits + 1 >= max_BE_bits) {
+        BE_bits = max_BE_bits;
+    } else {
+        BE_bits += 1;
+    }
 
-bool CacheDriver::BE_cache_roll_back() {}
+    size_t min_LC_bits = 1;
+    if (LC_bits - 1 <= min_LC_bits) {
+        LC_bits = 1;
+    } else {
+        LV_bits -= 1;
+    }
+
+    if (!update_masks())
+        return false;
+    if (!update_allocation())
+        return false;
+
+    return true;
+}
+
+bool CacheDriver::BE_cache_roll_back() {
+    size_t min_BE_bits = 0;
+    if (BE_bits > min_BE_bits) {
+        BE_bits -= 1;
+    }
+
+    size_t max_LC_bits = min_bit - sys_bits;
+    if (LC_bits + 1 >= max_LC_bits) {
+        LC_bits = max_LC_bits;
+    } else {
+        LC_bits += 1;
+    }
+
+    if (!update_masks())
+        return false;
+    if (!update_allocation())
+        return false;
+
+    return true;
+}
+
+void CacheDriver::update_masks() {
+    /*
+    CLOS mask layout:
+    +------------------------------------+
+    | BE(CLOS2) | LC(CLOS1) | SYS(CLOS0) |
+    +------------------------------------+
+    */
+
+    uint64_t mask = 0;
+    for(size_t i = 0; i < sys_bits; ++i)
+        mask = mask << 1 + 1;
+    sys_mask = mask;
+
+    mask = 0;
+    for(size_t i = 0; i < LC_bits; ++i) 
+        mask = mask << 1 + 1;
+    mask = mask << sys_bits;
+    LC_mask = mask;
+
+    mask = 0;
+    for(size_t i = 0; i < BE_bits; ++i)
+        mask = mask << 1 + 1;
+    mask = mask << (sys_bits + LC_bits);
+    BE_mask = mask;
+}
 
 void CacheDriver::clear() { init_masks(); }

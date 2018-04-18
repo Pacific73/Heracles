@@ -10,11 +10,13 @@ private:
     size_t LC_bits;
     size_t BE_bits;
     size_t sys_bits;
+
     size_t min_bits;
 
     void init_masks(); // only LC task running
 
     bool update_allocation();
+    void update_masks();
 
 public:
     CacheDriver();
@@ -24,7 +26,6 @@ public:
 
     bool update_association(size_t BE_core_num, size_t sys_core_num, size_t total_core_num);
 
-    bool new_BE_task
     bool BE_cache_grow();
     bool BE_cache_roll_back();
 
