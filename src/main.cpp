@@ -6,7 +6,7 @@ int main(int argc, char **argv) {
 
     if (argc >= 2) {
         if (strcmp(argv[1], "-debug") == 0) {
-            set_debug(true;)
+            set_debug(true);
         }
     }
 

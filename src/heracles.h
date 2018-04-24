@@ -36,15 +36,15 @@ class Heracles {
 
     void exec() {
         int errno;
-        pthread_t cm;
+        pthread_t t, cmc;
 
-        errno = pthread_create(&cm, nullptr, tap, tap);
+        errno = pthread_create(&t, nullptr, run_tap, tap);
         if (errno != 0) {
             print_err("[HARACLES] can't create core_memory_controller.");
             exit(-1);
         }
 
-        errno = pthread_create(&cm, nullptr, run_cm_ctr, cm_ctr);
+        errno = pthread_create(&cmc, nullptr, run_cm_ctr, cm_ctr);
         if (errno != 0) {
             print_err("[HARACLES] can't create core_memory_controller.");
             exit(-1);

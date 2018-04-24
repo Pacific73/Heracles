@@ -21,9 +21,6 @@ private:
 public:
     CacheDriver();
 
-    bool intel_init();
-    bool intel_fini();
-
     bool update_association(size_t BE_core_num, size_t sys_core_num, size_t total_core_num);
 
     bool BE_cache_grow();

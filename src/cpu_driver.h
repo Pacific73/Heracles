@@ -30,15 +30,17 @@ class CpuDriver {
 
     size_t total_core_num() const;
 
-    bool set_new_BE_task(pid_t pid);
+    size_t BE_core_num() const;
 
-    void clear();
+    size_t sys_core_num() const;
+
+    bool set_new_BE_task(pid_t pid);
 
     bool BE_cores_inc(size_t inc); // bound check
 
     bool BE_cores_dec(size_t dec); // bound check
 
-    
+    void clear();
 };
 
 #endif

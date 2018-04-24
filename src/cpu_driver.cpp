@@ -37,7 +37,8 @@ bool CpuDriver::init_cgroups_dir() {
         if (res == 0) {
             res = rmdir(paths[i].c_str());
             if (res != 0) {
-                print_err("[CPU_DRIVER] can't remove existed cgroups_cpuset dir.");
+                print_err(
+                    "[CPU_DRIVER] can't remove existed cgroups_cpuset dir.");
                 return false;
             }
         }
@@ -53,14 +54,14 @@ bool CpuDriver::init_cgroups_dir() {
 
 bool CpuDriver::init_core_num() {
 
-    if (!cc_d->intel_init()) {
+    if (!intel_init()) {
         return false;
     }
 
     size_t *sockets, sock_count;
     sockets = pqos_cpu_get_sockets(p_cpu, &sock_count);
     if (sockets == NULL) {
-        print_err("[CPUDRIVER] error retrieving CPU socket information.\n");
+        print_err("[CPUDRIVER] error retrieving CPU socket information.");
         return false;
     }
     assert(&sock_count >= 1);
@@ -70,25 +71,26 @@ bool CpuDriver::init_core_num() {
     unsigned lcount = 0;
     lcores = pqos_cpu_get_cores(p_cpu, sockets[0], &lcount);
     if (lcores == NULL || lcount == 0) {
-        print_err("[CPUDRIVER] error retrieving core information.\n");
+        print_err("[CPUDRIVER] error retrieving core information.");
         free(lcores);
         free(sockets);
         return false;
     }
-    // get core_count on socket 0 (this program is only for single socket structure)
+    // get core_count on socket 0 (this program is only for single socket
+    // structure)
 
     BE_cores = 0;
     sys_cores = get_opt<size_t>("HERACLES_IDLE_CORE_NUM", 1);
-    total_cores = lcount;
+    total_cores = get_opt<size_t>("HERACLES_TOTAL_CORE_NUM", 8);
 
-    assert(total_cores > sys_cores + 2);
+    assert(total_cores <= lcount) assert(total_cores > sys_cores + 2);
 
-    if(!cc_d->update_association(BE_cores, sys_cores, total_cores)) {
+    if (!cc_d->update_association(BE_cores, sys_cores, total_cores)) {
         return false;
     }
     // set core_num and check bounds, update core CLOS mapping
 
-    if (!cc_d->intel_fini()) {
+    if (!intel_fini()) {
         return false;
     }
     return true;
@@ -133,6 +135,10 @@ bool CpuDriver::set_cores_for_pid(size_t type, size_t left, size_t right) {
 }
 
 size_t CpuDriver::total_core_num() const { return total_cores; }
+
+size_t CpuDriver::BE_core_num() const { return BE_cores; }
+
+size_t CpuDriver::sys_core_num() const { return sys_cores; }
 
 bool CpuDriver::update() {
     if (tap->LC_pid() == -1)

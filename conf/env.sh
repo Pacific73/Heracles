@@ -19,4 +19,12 @@ TOP_SLOW_BE_BOUND=0.1
 CGROUPS_DIR=/sys/fs/cgroups
 # default for Linux ubuntu
 
-HERACLES_IDLE_NUM=1
+HERACLES_IDLE_CORE_NUM=1
+
+HERACLES_TOTAL_CORE_NUM=16
+# cores for heracles in total
+# e.g. set TOTAL_CORE_NUM=16 means core [0, 15] will be used for 
+#      heracles even if there're more than 16 cores on local machine.
+
+HERACLES_MAX_MEM_BW=16000
+HERACLES_IS_NUMA=1

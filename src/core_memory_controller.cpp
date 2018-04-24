@@ -5,14 +5,17 @@ CoreMemoryController::CoreMemoryController(Tap *t, InfoPuller *i)
     : tap(t), puller(i) {
     state = STATE::GROW_LLC;
 
+    load_config();
+
     init_cache_driver();
+
     init_cpu_driver();
     init_memory_driver();
 }
 
 void CoreMemoryController::load_config() {
 
-    dram_limit = get_opt<double>("HERACLES_DRAM_LIMIT", 1024);
+    dram_limit = get_opt<double>("HERACLES_DRAM_LIMIT", 10240);
     sleep_time = get_opt<time_t>("CORE_MEMORY_SLEEP_TIME", 2);
 }
 
@@ -22,12 +25,11 @@ void CoreMemoryController::init_cpu_driver() {
     //...
 }
 
-void CoreMemoryController::init_memory_driver() { mm_d = new MemoryDriver(); }
+void CoreMemoryController::init_memory_driver() { mm_d = new MemoryDriver(tap, cc_d); }
 
 void CoreMemoryController::init_cache_driver() { cc_d = new CacheDriver(); }
 
 int CoreMemoryController::run() {
-    load_config();
 
     struct timespec ts;
     ts.tv_sec = sleep_time;

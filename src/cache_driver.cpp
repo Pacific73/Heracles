@@ -17,7 +17,7 @@ CacheDriver::CacheDriver() {
 
     int ret = pqos_cap_get(&p_cap, &p_cpu);
     if (ret != PQOS_RETVAL_OK) {
-        print_err("[CACHEDRIVER] error retrieving PQoS capabilities.\n");
+        print_err("[CACHEDRIVER] error retrieving PQoS capabilities.");
         exit(-1);
     }
     // check CMT capability and CPU info pointer
@@ -48,32 +48,6 @@ void CacheDriver::init_masks() {
     update_masks();
 }
 
-bool CacheDriver::intel_init() {
-    pqos_config cfg;
-
-    memset(&cfg, 0, sizeof(cfg));
-    cfg.fd_log = STDOUT_FILENO;
-    cfg.verbose = 0;
-    /* PQoS Initialization - Check and initialize CAT and CMT capability */
-    ret = pqos_init(&cfg);
-    if (ret != PQOS_RETVAL_OK) {
-        print_err(
-            "[CACHEDRIVER] intel_init() error initializing PQoS library.\n");
-        return false;
-    }
-    return true;
-}
-
-bool CacheDriver::intel_fini() {
-    int ret = pqos_fini();
-    if (ret != PQOS_RETVAL_OK) {
-        print_err(
-            "[CACHEDRIVER] intel_fini() error shutting down PQoS library.\n");
-        return false;
-    }
-    return true;
-}
-
 bool CacheDriver::update_association(size_t BE_core_num, size_t sys_core_num,
                                      size_t total_core_num) {
     if (!intel_init()) {
@@ -96,10 +70,9 @@ bool CacheDriver::update_association(size_t BE_core_num, size_t sys_core_num,
             return false;
         }
     }
-    // set core [0, BE-1]:                  for LC  class - CLOS 1
-    // set core [BE, total-sys-1]:          for BE  class - CLOS 2
-    // set core [total-sys, total-1]:       for sys class - CLOS 0 (default
-    // CLOS)
+    // set core [0, BE-1]:              for LC  class - CLOS 1
+    // set core [BE, total-sys-1]:      for BE  class - CLOS 2
+    // set core [total-sys, total-1]:   for sys class - CLOS 0 (default CLOS)
 
     if (!intel_fini()) {
         return false;
@@ -191,11 +164,11 @@ bool CacheDriver::BE_cache_roll_back() {
 
 void CacheDriver::update_masks() {
     /*
-    CLOS mask layout:
-    +------------------------------------+
-    | BE(CLOS2) | LC(CLOS1) | SYS(CLOS0) |
-    +------------------------------------+
-    */
+     *  CLOS mask layout:
+     *  +------------------------------------+
+     *  | BE(CLOS2) | LC(CLOS1) | SYS(CLOS0) |
+     *  +------------------------------------+
+     */
 
     uint64_t mask = 0;
     for(size_t i = 0; i < sys_bits; ++i)
