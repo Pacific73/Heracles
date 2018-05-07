@@ -26,13 +26,14 @@ class Heracles {
     TopController *t_ctr;
 
   public:
-    Heracles() {
-        tap = new Tap();
+    Heracles(pid_t lc_pid) {
+        tap = new Tap(lc_pid);
         puller = new InfoPuller();
 
         cm_ctr = new CoreMemoryController(tap, puller);
         t_ctr = new TopController(tap, puller);
     }
+
 
     void exec() {
         int errno;

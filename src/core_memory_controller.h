@@ -33,12 +33,14 @@ class CoreMemoryController {
     void init_memory_driver();
     void init_cache_driver();
 
-    void load_config();
+    void init_config();
 
   public:
     CoreMemoryController(Tap *t, InfoPuller *i);
 
     int run();
+
+    void clear();
 };
 
 #endif

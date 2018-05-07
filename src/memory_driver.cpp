@@ -27,26 +27,33 @@ double MemoryDriver::measure_bw(size_t lower, size_t upper) {
     (void)pqos_cap_get_type(p_cap, PQOS_CAP_TYPE_MON, &cap_mon);
     // get cpu info and capability info
 
-    const enum pqos_mon_event perf_events =
-        PQOS_PERF_EVENT_IPC | PQOS_PERF_EVENT_LLC_MISS;
-    for (size_t i = 0; i < cap_mon->u.mon->num_events; i++)
-        sel_events_max |= (cap_mon->u.mon->events[i].type);
+    const enum pqos_mon_event perf_events = (pqos_mon_event)(
+        PQOS_PERF_EVENT_IPC | PQOS_PERF_EVENT_LLC_MISS);
+    enum pqos_mon_event sel_events_max = (pqos_mon_event)(0);
 
-    sel_events_max &= ~perf_events;
+    for (size_t i = 0; i < cap_mon->u.mon->num_events; i++)
+        sel_events_max = (pqos_mon_event)(sel_events_max | cap_mon->u.mon->events[i].type);
+
+    sel_events_max = (pqos_mon_event)(sel_events_max & ~perf_events);
     // get all supported events and remove perf events: IPC/LLC-MISSES
 
     size_t core_cnt = upper - lower + 1;
-    pqos_mon_data m_mon_grps[core_cnt];
+    pqos_mon_data m_mon_data[core_cnt];
+    pqos_mon_data *m_mon_grps[core_cnt];
+    for(size_t i = 0; i < core_cnt; ++i)
+        m_mon_grps[i] = &m_mon_data[i];
     // create data array and init
 
     for (size_t i = 0; i < core_cnt; ++i) {
-        size_t lcore = lower + i;
+        unsigned lcore = lower + i;
         ret = pqos_mon_start(1, &lcore, sel_events_max, nullptr,
-                             &(m_mon_grps[i]));
-        if (ret != PQOS_RETVEL_OK) {
-            print_err("[MEMORYDRIVER] measure_bw() monitoring start error on "
-                      "core %u, status %d.",
-                      lcore, ret);
+                             m_mon_grps[i]);
+        if (ret != PQOS_RETVAL_OK) {
+            char *buf;
+            sprintf(buf, "[MEMORYDRIVER] measure_bw() monitoring start error "
+                         "on core %u, status %d.",
+                    lcore, ret);
+            print_err(std::string(buf));
             return 0;
         }
     }
@@ -56,7 +63,7 @@ double MemoryDriver::measure_bw(size_t lower, size_t upper) {
     if (ret != PQOS_RETVAL_OK) {
         print_err("[MEMORYDRIVER] measure_bw() 1st time failed to poll "
                   "monitoring data!\n");
-        return;
+        return -1;
     }
     // pull monitor data for the first time
 
@@ -70,7 +77,7 @@ double MemoryDriver::measure_bw(size_t lower, size_t upper) {
     if (ret != PQOS_RETVAL_OK) {
         print_err("[MEMORYDRIVER] measure_bw() 2nd time failed to poll "
                   "monitoring data!\n");
-        return;
+        return -1;
     }
     // pull monitor data for the second time
 
@@ -112,7 +119,9 @@ double MemoryDriver::measure_dram_bw() {
     return res;
 }
 
-double MemoryDriver::predicted_total_bw() {}
+double MemoryDriver::predicted_total_bw() {
+    return 0;
+}
 
 double MemoryDriver::LC_bw() {
     double res;
@@ -136,6 +145,10 @@ double MemoryDriver::BE_bw() {
     return res;
 }
 
-double MemoryDriver::BE_bw_per_core() {}
+double MemoryDriver::BE_bw_per_core() {
+     double res = BE_bw();
+     size_t cnt = cpu_d->BE_core_num();
+     return res / cnt;
+}
 
 void MemoryDriver::clear() {}

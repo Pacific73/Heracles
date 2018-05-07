@@ -85,6 +85,7 @@ bool CacheDriver::update_allocation() {
         return false;
     }
     unsigned sock_count, *sockets = NULL;
+    const struct pqos_cpuinfo *p_cpu = NULL;
 
     sockets = pqos_cpu_get_sockets(p_cpu, &sock_count);
     if (sockets == NULL) {
@@ -109,7 +110,7 @@ bool CacheDriver::update_allocation() {
 
     int ret = pqos_l3ca_set(*sockets, 3, tab);
     if (ret != PQOS_RETVAL_OK) {
-        print_err("[CACHEDRIVER] update_allocation() error setting CLOS masks.")
+        print_err("[CACHEDRIVER] update_allocation() error setting CLOS masks.");
     }
 
     if (!intel_fini()) {
@@ -130,11 +131,10 @@ bool CacheDriver::BE_cache_grow() {
     if (LC_bits - 1 <= min_LC_bits) {
         LC_bits = 1;
     } else {
-        LV_bits -= 1;
+        LC_bits -= 1;
     }
 
-    if (!update_masks())
-        return false;
+    update_masks();
     if (!update_allocation())
         return false;
 
@@ -147,15 +147,14 @@ bool CacheDriver::BE_cache_roll_back() {
         BE_bits -= 1;
     }
 
-    size_t max_LC_bits = min_bit - sys_bits;
+    size_t max_LC_bits = min_bits - sys_bits;
     if (LC_bits + 1 >= max_LC_bits) {
         LC_bits = max_LC_bits;
     } else {
         LC_bits += 1;
     }
 
-    if (!update_masks())
-        return false;
+    update_masks();
     if (!update_allocation())
         return false;
 
@@ -172,18 +171,18 @@ void CacheDriver::update_masks() {
 
     uint64_t mask = 0;
     for(size_t i = 0; i < sys_bits; ++i)
-        mask = mask << 1 + 1;
+        mask = (mask << 1) + 1;
     sys_mask = mask;
 
     mask = 0;
     for(size_t i = 0; i < LC_bits; ++i) 
-        mask = mask << 1 + 1;
+        mask = (mask << 1) + 1;
     mask = mask << sys_bits;
     LC_mask = mask;
 
     mask = 0;
     for(size_t i = 0; i < BE_bits; ++i)
-        mask = mask << 1 + 1;
+        mask = (mask << 1) + 1;
     mask = mask << (sys_bits + LC_bits);
     BE_mask = mask;
 }

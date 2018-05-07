@@ -1,6 +1,9 @@
 #ifndef CACHE_DRIVER_H
 #define CACHE_DRIVER_H
 
+#include <stdint.h>
+#include <cstring>
+
 class CacheDriver {
 private:
     uint64_t LC_mask;
@@ -11,7 +14,7 @@ private:
     size_t BE_bits;
     size_t sys_bits;
 
-    size_t min_bits;
+    unsigned int min_bits;
 
     void init_masks(); // only LC task running
 

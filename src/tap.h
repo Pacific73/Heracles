@@ -9,17 +9,21 @@
 
 class CpuDriver;
 
-enum TAPSTATE {
-    DISABLED,
-    PAUSED,
-    ENABLED
-};
+class TopController;
+
+class CoreMemoryController;
+
+enum TAPSTATE { DISABLED, PAUSED, ENABLED };
 
 class Tap {
   private:
     TAPSTATE _state;
 
     CpuDriver *cpu_d;
+    DatabaseDriver *db_d;
+
+    TopController *t_c;
+    CoreMemoryController *cm_c;
 
     size_t total_cores;
     size_t BE_cores;
@@ -27,28 +31,26 @@ class Tap {
     pid_t _LC_pid;
     pid_t _BE_pid;
 
-    DatabaseDriver *db_d;
-
     pthread_mutex_t mutex;
-
-    void init_database_driver();
 
     void BE_end();
 
-    std::string get_next_command();
-
   public:
-    Tap();
+    Tap(pid_t lc_pid);
 
-    void set_cpu_d(CpuDriver *c) { cpu_d = c; }
+    void set_t_c(TopController *tc);
+
+    void set_cm_c(CoreMemoryController *cmc);
+
+    void set_cpu_d(CpuDriver *c);
+
+    void set_state(TAPSTATE t);
 
     pid_t BE_pid() const { return _BE_pid; }
 
     pid_t LC_pid() const { return _LC_pid; }
 
     TAPSTATE state() const { return _state; }
-
-    void set_state(TAPSTATE t);
 
     void cool_down_little();
 

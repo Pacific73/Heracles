@@ -3,9 +3,11 @@
 
 CoreMemoryController::CoreMemoryController(Tap *t, InfoPuller *i)
     : tap(t), puller(i) {
+    t->set_cm_c(this);
+
     state = STATE::GROW_LLC;
 
-    load_config();
+    init_config();
 
     init_cache_driver();
 
@@ -13,7 +15,7 @@ CoreMemoryController::CoreMemoryController(Tap *t, InfoPuller *i)
     init_memory_driver();
 }
 
-void CoreMemoryController::load_config() {
+void CoreMemoryController::init_config() {
 
     dram_limit = get_opt<double>("HERACLES_DRAM_LIMIT", 10240);
     sleep_time = get_opt<time_t>("CORE_MEMORY_SLEEP_TIME", 2);
@@ -25,7 +27,9 @@ void CoreMemoryController::init_cpu_driver() {
     //...
 }
 
-void CoreMemoryController::init_memory_driver() { mm_d = new MemoryDriver(tap, cc_d); }
+void CoreMemoryController::init_memory_driver() {
+    mm_d = new MemoryDriver(tap, cpu_d);
+}
 
 void CoreMemoryController::init_cache_driver() { cc_d = new CacheDriver(); }
 
@@ -39,16 +43,16 @@ int CoreMemoryController::run() {
         nanosleep(&ts, nullptr);
 
         if (tap->BE_pid() == -1 || tap->state() == TAPSTATE::DISABLED) {
-            cpu_d->clear();
-            mm_d->clear();
-            cc_d->clear();
+            clear();
             continue;
-        } // if no BE task is running (or BE is disabled), give all capabilities
-          // to LC
+        }
+        // if no BE task is running (or BE is disabled), give all capabilities
+        // to LC
 
         if (tap->state() == TAPSTATE::PAUSED) {
             continue;
-        } // if BE growth is not allowed, keep current settings
+        }
+        // if BE growth is not allowed, keep current settings
 
         double total_bw = mm_d->measure_dram_bw();
         if (total_bw > dram_limit) {
@@ -89,4 +93,10 @@ int CoreMemoryController::run() {
             }
         }
     }
+}
+
+void CoreMemoryController::clear() {
+    cpu_d->clear();
+    mm_d->clear();
+    cc_d->clear();
 }

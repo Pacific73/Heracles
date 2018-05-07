@@ -13,6 +13,11 @@
 
 CpuDriver::CpuDriver(Tap *t, CacheDriver *cd) : tap(t), cc_d(cd) {
     path = get_opt<std::string>("CGROUPS_DIR", "/sys/fs/cgroups");
+
+    if (pthread_mutex_init(&mutex, nullptr) != 0) {
+        print_err("[CPUDRIVER] mutex init failed.");
+    }
+
     assert(init_cgroups_dir() == true);
     // init cgroups VFS
 
@@ -58,13 +63,14 @@ bool CpuDriver::init_core_num() {
         return false;
     }
 
-    size_t *sockets, sock_count;
+    unsigned *sockets, sock_count;
+    pqos_cpuinfo *p_cpu = NULL;
     sockets = pqos_cpu_get_sockets(p_cpu, &sock_count);
     if (sockets == NULL) {
         print_err("[CPUDRIVER] error retrieving CPU socket information.");
         return false;
     }
-    assert(&sock_count >= 1);
+    assert(sock_count >= 1);
     // assert: sock_count >= 1
 
     unsigned *lcores = NULL;
@@ -83,7 +89,8 @@ bool CpuDriver::init_core_num() {
     sys_cores = get_opt<size_t>("HERACLES_IDLE_CORE_NUM", 1);
     total_cores = get_opt<size_t>("HERACLES_TOTAL_CORE_NUM", 8);
 
-    assert(total_cores <= lcount) assert(total_cores > sys_cores + 2);
+    assert(total_cores <= lcount);
+    assert(total_cores > sys_cores + 2);
 
     if (!cc_d->update_association(BE_cores, sys_cores, total_cores)) {
         return false;
@@ -168,26 +175,38 @@ bool CpuDriver::BE_cores_inc(size_t inc) {
     if (BE_cores + inc >= total_cores - sys_cores - 1) {
         return false;
     }
+
+    pthread_mutex_lock(&mutex);
     BE_cores += inc;
+    pthread_mutex_unlock(&mutex);
+
     if (update()) {
         return true;
     } else {
+        pthread_mutex_lock(&mutex);
         BE_cores = tmp;
+        pthread_mutex_unlock(&mutex);
         return false;
     }
 }
 
 bool CpuDriver::BE_cores_dec(size_t dec) {
     size_t tmp = BE_cores;
+
+    pthread_mutex_lock(&mutex);
     if (dec >= BE_cores - sys_cores - 1) {
         BE_cores = 0;
     } else {
         BE_cores -= dec;
     }
+    pthread_mutex_unlock(&mutex);
+
     if (update()) {
         return true;
     } else {
+        pthread_mutex_lock(&mutex);
         BE_cores = tmp;
+        pthread_mutex_unlock(&mutex);
         return false;
     }
 }

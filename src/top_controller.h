@@ -17,11 +17,13 @@ class TopController {
     Tap *tap;
     InfoPuller* puller;
 
-    void load_config();
+    void init_config();
     bool update();
 
   public:
     TopController(Tap *t, InfoPuller* i);
+
+    void sys_exit();
 
     int run();
 };

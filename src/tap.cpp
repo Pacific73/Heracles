@@ -1,34 +1,50 @@
 #include "tap.h"
 #include "cpu_driver.h"
+#include "core_memory_controller.h"
+#include "top_controller.h"
+#include <cassert>
 #include <csignal>
 #include <sys/wait.h>
-#include <cassert>
 
-Tap::Tap() : _state(TAPSTATE::DISABLED) {
+Tap::Tap(pid_t lc_pid) : _state(TAPSTATE::DISABLED) {
     if (pthread_mutex_init(&mutex, nullptr) != 0) {
         print_err("[TAP] mutex init failed.");
     }
 
-    init_database_driver();
+    db_d = new DatabaseDriver();
 
-    _LC_pid = get_opt("HERACLES_LC_PID", -1);
-    if (_LC_pid == -1) {
+    _BE_pid = -1;
+    _LC_pid = (lc_pid == -1) ? get_opt("HERACLES_LC_PID", -1) : lc_pid;
+
+    if (_LC_pid <= 0) {
         print_err("[TAP] can't recognize LC task.");
         exit(-1);
     }
-
-    _BE_pid = -1;
 }
-
-void Tap::init_database_driver() {
-    db_d = new DatabaseDriver("path");
-    //...
-}
-
-std::string Tap::get_next_command() { return ""; }
 
 void Tap::BE_end() {
     // clean other drivers' status
+    _BE_pid = -1;
+    cm_c->clear();
+    db_d->task_finish();
+}
+
+void Tap::set_t_c(TopController *tc) {
+    pthread_mutex_lock(&mutex);
+    t_c = tc;
+    pthread_mutex_unlock(&mutex);
+}
+
+void Tap::set_cm_c(CoreMemoryController *cmc) {
+    pthread_mutex_lock(&mutex);
+    cm_c = cmc;
+    pthread_mutex_unlock(&mutex);
+}
+
+void Tap::set_cpu_d(CpuDriver* cpud) {
+    pthread_mutex_lock(&mutex);
+    cpu_d = cpud;
+    pthread_mutex_unlock(&mutex);
 }
 
 void Tap::set_state(TAPSTATE t) {
@@ -45,12 +61,17 @@ void Tap::cool_down_little() {
 int Tap::run() {
     while (true) {
         if (_BE_pid == -1) {
-            std::string command = get_next_command();
+            std::string command = db_d->next_command();
             if (command == "") {
+                std::cout << "[TAP] no more ready BE tasks! Heracles will exit." << std::endl;
+                t_c->sys_exit();
                 break;
-                // no new tasks
+                // there's no more "ready" BE tasks and system shall exit.
             }
+
             pid_t pid = fork();
+            // else fork new process and exec a new BE task
+
             if (pid == -1) {
                 print_err("[TAP] fork error.");
                 continue;
@@ -59,13 +80,15 @@ int Tap::run() {
                 int status;
                 waitpid(pid, &status, 0);
                 BE_end();
-                _BE_pid = -1;
+                // parent process: heracles
             } else if (pid == 0) {
-                // exec command....
+                int ret = system(command.c_str());
+                exit(ret);
+                // child process: exec shell command
             }
         } else {
-            print_err("[TAP] BE_pid == 1 && wait failed.");
+            print_err("[TAP] BE_pid != -1 before heracles assign a new task!");
             break;
         }
-    }
+    }    
 }

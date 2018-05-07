@@ -3,9 +3,13 @@
 #include <fstream>
 #include <iostream>
 
-TopController::TopController(Tap *t, InfoPuller *i) : tap(t), puller(i) {}
+TopController::TopController(Tap *t, InfoPuller *i) : tap(t), puller(i) {
+    t->set_t_c(this);
 
-void TopController::load_config() {
+    init_config();
+}
+
+void TopController::init_config() {
     sleep_time = get_opt<time_t>("TOP_SLEEP_TIME", 5);
     disable_bound = get_opt<double>("TOP_DISABLE_BOUND", 0.85);
     enable_bound = get_opt<double>("TOP_ENABLE_BOUND", 0.8);
@@ -13,8 +17,6 @@ void TopController::load_config() {
 }
 
 int TopController::run() {
-
-    load_config();
 
     struct timespec ts;
     ts.tv_sec = sleep_time;
@@ -33,10 +35,13 @@ int TopController::run() {
             // enter_cooling_down()...
         } else if (load_percent > disable_bound) {
             tap->set_state(TAPSTATE::DISABLED);
+
         } else if (load_percent < enable_bound) {
             tap->set_state(TAPSTATE::ENABLED);
+
         } else if (slack < slow_BE_bound) {
             tap->set_state(TAPSTATE::PAUSED);
+            
             if (slack < slow_BE_bound / 2) {
                 tap->cool_down_little();
             }
@@ -46,5 +51,9 @@ int TopController::run() {
 }
 
 bool TopController::update() {
+
+}
+
+void TopController::sys_exit() {
 
 }

@@ -5,9 +5,11 @@
 
 class DatabaseDriver {
   private:
+    std::string path;
   public:
-    DatabaseDriver(std::string path);
+    DatabaseDriver();
     std::string next_command();
+    void task_finish();
 };
 
 #endif

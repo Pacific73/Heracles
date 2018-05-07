@@ -3,10 +3,12 @@
 
 #include "tap.h"
 #include "cache_driver.h"
+#include <pthread.h>
 
 class CpuDriver {
   private:
     std::string path;
+
     Tap *tap;
     CacheDriver *cc_d;
 
@@ -16,6 +18,8 @@ class CpuDriver {
 
     pid_t BE_pid;
     pid_t LC_pid;
+
+    pthread_mutex_t mutex;
 
     bool init_cgroups_dir();
 
