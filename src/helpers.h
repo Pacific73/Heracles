@@ -1,8 +1,8 @@
 #ifndef HELPERS_H
 #define HELPERS_H
 
-#include <iostream>
 #include <cstdlib>
+#include <iostream>
 #include <sstream>
 
 #define OPT_LC 0
@@ -10,7 +10,13 @@
 
 void set_debug(bool d);
 
-void print_err(std::string msg);
+void set_log(bool l);
+
+void print_err(const char *fmt, ...);
+
+void print_log(const char *fmt, ...);
+
+void intel_mutex_init();
 
 bool intel_init(bool mbm = false);
 
@@ -22,11 +28,10 @@ inline static double bytes_to_mb(const double bytes) {
     return bytes / (1024.0 * 1024.0);
 }
 
-template <typename T>
-static T get_opt(const char *name, T defVal) {
+template <typename T> static T get_opt(const char *name, T defVal) {
     const char *opt = getenv(name);
 
-    std::cout << name << " = " << opt << std::endl;
+    print_log("[ENV] %s = %s", name, opt);
     if (!opt)
         return defVal;
     std::stringstream ss(opt);

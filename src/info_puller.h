@@ -5,31 +5,26 @@
 
 class LatencyInfo {
   private:
-    double cur_95;
-    double cur_99;
-    double cur_max;
-    double slo_latency;
-    bool complete;
+    double cur_lat;
+    double slo_lat;
 
   public:
     friend class InfoPuller;
 
-    LatencyInfo() : cur_95(0), cur_99(0), cur_max(0), complete(false) {}
+    LatencyInfo() : cur_lat(0), slo_lat(0) {}
 
-    double slack_95();
-    double slack_99();
+    double slack();
 };
 
 class LoadInfo {
   private:
     size_t cur_load;
     size_t max_load;
-    bool complete;
 
   public:
     friend class InfoPuller;
 
-    LoadInfo() : cur_load(0), max_load(0), complete(false) {}
+    LoadInfo() : cur_load(0), max_load(0) {}
 
     double load_percent();
 };
@@ -40,6 +35,8 @@ class InfoPuller {
     std::string max_latency_path;
     std::string max_load_path;
     std::string load_path;
+
+    void init_config();
 
   public:
     InfoPuller();

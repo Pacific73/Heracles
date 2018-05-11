@@ -43,6 +43,7 @@ int CoreMemoryController::run() {
         nanosleep(&ts, nullptr);
 
         if (tap->BE_pid() == -1 || tap->state() == TAPSTATE::DISABLED) {
+            print_log("[CMC] tap disabled detected. clearing...");
             clear();
             continue;
         }
@@ -50,6 +51,7 @@ int CoreMemoryController::run() {
         // to LC
 
         if (tap->state() == TAPSTATE::PAUSED) {
+            print_log("[CMC] tap paused detected.");
             continue;
         }
         // if BE growth is not allowed, keep current settings
@@ -57,7 +59,9 @@ int CoreMemoryController::run() {
         double total_bw = mm_d->measure_dram_bw();
         if (total_bw > dram_limit) {
             double overage = total_bw - dram_limit;
-            cpu_d->BE_cores_dec(overage / mm_d->BE_bw_per_core());
+            size_t minus = (size_t)(overage / mm_d->BE_bw_per_core());
+            cpu_d->BE_cores_dec(minus);
+            print_log("[CMC] BW(%lf) greater than dram_limit(%lf). dec %u cores.", total_bw, dram_limit, minus);
             continue;
         } // if memory bw is overused, cut the extra tasks
 
@@ -85,7 +89,7 @@ int CoreMemoryController::run() {
         } else if (state == STATE::GROW_CORES) {
             double needed = mm_d->LC_bw() + mm_d->BE_bw() +
                             mm_d->BE_bw_per_core(); // one more BE core
-            double slack = puller->pull_latency_info().slack_95();
+            double slack = puller->pull_latency_info().slack();
             if (needed > dram_limit) {
                 state = STATE::GROW_LLC;
             } else if (slack > 0.10) { // !!!!->slack!!!! 0.10!!!!

@@ -5,6 +5,7 @@
 #include "info_puller.h"
 #include "tap.h"
 #include "top_controller.h"
+#include "helpers.h"
 #include <pthread.h>
 
 void *run_cm_ctr(void *p) {
@@ -12,8 +13,8 @@ void *run_cm_ctr(void *p) {
     cm_ctr->run();
 }
 
-void* run_tap(void* p) {
-    Tap* tap = reinterpret_cast<Tap*>(p);
+void *run_tap(void *p) {
+    Tap *tap = reinterpret_cast<Tap *>(p);
     tap->run();
 }
 
@@ -27,13 +28,14 @@ class Heracles {
 
   public:
     Heracles(pid_t lc_pid) {
+        intel_mutex_init();
+        
         tap = new Tap(lc_pid);
         puller = new InfoPuller();
 
         cm_ctr = new CoreMemoryController(tap, puller);
         t_ctr = new TopController(tap, puller);
     }
-
 
     void exec() {
         int errno;

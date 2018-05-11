@@ -1,22 +1,20 @@
 #!/bin/bash
 
-HERACLES_LC_PID=9999
-
-HERACLES_LATENCY_FILE=
-HERACLES_MAX_LATENCY_FILE=
-HERACLES_LOAD_FILE=
-HERACLES_MAX_LOAD_FILE=
+HERACLES_LATENCY_FILE=/home/zcy/tailbench/tailbench-v0.9/xapian/lc.latency.95
+HERACLES_MAX_LATENCY_FILE=/home/zcy/tailbench/tailbench-v0.9/xapian/lc.latency.slo
+HERACLES_LOAD_FILE=/home/zcy/tailbench/tailbench-v0.9/xapian/lc.load.cur
+HERACLES_MAX_LOAD_FILE=/home/zcy/tailbench/tailbench-v0.9/xapian/lc.load.max
 
 HERACLES_DRAM_LIMIT=1024
 
 CORE_MEMORY_SLEEP_TIME=2
 
 TOP_SLEEP_TIME=5
-TOP_DISABLE_BOND=0.85
+TOP_DISABLE_BOUND=0.85
 TOP_ENABLE_BOUND=0.8
 TOP_SLOW_BE_BOUND=0.1
 
-CGROUPS_DIR=/sys/fs/cgroups
+CGROUPS_DIR=/sys/fs/cgroup
 # default for Linux ubuntu
 
 HERACLES_IDLE_CORE_NUM=1

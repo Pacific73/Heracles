@@ -49,11 +49,8 @@ double MemoryDriver::measure_bw(size_t lower, size_t upper) {
         ret = pqos_mon_start(1, &lcore, sel_events_max, nullptr,
                              m_mon_grps[i]);
         if (ret != PQOS_RETVAL_OK) {
-            char *buf;
-            sprintf(buf, "[MEMORYDRIVER] measure_bw() monitoring start error "
-                         "on core %u, status %d.",
-                    lcore, ret);
-            print_err(std::string(buf));
+            print_err("[MEMORYDRIVER] measure_bw() monitoring start error "
+                         "on core %u, status %d.", lcore, ret);
             return 0;
         }
     }
@@ -62,7 +59,7 @@ double MemoryDriver::measure_bw(size_t lower, size_t upper) {
     ret = pqos_mon_poll(m_mon_grps, core_cnt);
     if (ret != PQOS_RETVAL_OK) {
         print_err("[MEMORYDRIVER] measure_bw() 1st time failed to poll "
-                  "monitoring data!\n");
+                  "monitoring data!");
         return -1;
     }
     // pull monitor data for the first time
@@ -76,7 +73,7 @@ double MemoryDriver::measure_bw(size_t lower, size_t upper) {
     ret = pqos_mon_poll(m_mon_grps, core_cnt);
     if (ret != PQOS_RETVAL_OK) {
         print_err("[MEMORYDRIVER] measure_bw() 2nd time failed to poll "
-                  "monitoring data!\n");
+                  "monitoring data!");
         return -1;
     }
     // pull monitor data for the second time

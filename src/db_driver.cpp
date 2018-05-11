@@ -5,6 +5,7 @@
 
 DatabaseDriver::DatabaseDriver() {
     path = get_opt<std::string>("HERACLES_DB_PATH", "tasks.db");
+    print_log("[DBDRIVER] inited.");
 }
 
 std::string DatabaseDriver::next_command() {
@@ -18,7 +19,7 @@ std::string DatabaseDriver::next_command() {
         exit(-1);
     }
 
-    std::string sql = "SELECT FROM tasks WHERE state=1 LIMIT 1;";
+    std::string sql = "SELECT * FROM tasks WHERE state=1 LIMIT 1;";
 
     char **result;
     char *errmsg = 0;
@@ -28,12 +29,12 @@ std::string DatabaseDriver::next_command() {
     if (res != SQLITE_OK) {
         sqlite3_close(db);
         std::string msg = std::string("[DBDRIVER] SQL select error: ") + errmsg;
-        print_err(msg);
+        print_err(msg.c_str());
         sqlite3_free(errmsg);
         return command;
     }
 
-    assert(col == 3);
+    assert(col == 0 || col == 3);
     assert(row == 0 || row == 1);
 
     if (row == 1) {
@@ -61,7 +62,7 @@ void DatabaseDriver::task_finish() {
     if (res != SQLITE_OK) {
         sqlite3_close(db);
         std::string msg = std::string("[DBDRIVER] SQL update error: ") + errmsg;
-        print_err(msg);
+        print_err(msg.c_str());
         sqlite3_free(errmsg);
     }
 

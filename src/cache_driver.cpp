@@ -12,8 +12,8 @@ CacheDriver::CacheDriver() {
         exit(-1);
     }
 
-    const struct pqos_cpuinfo *p_cpu = NULL;
-    const struct pqos_cap *p_cap = NULL;
+    const struct pqos_cpuinfo *p_cpu = nullptr;
+    const struct pqos_cap *p_cap = nullptr;
 
     int ret = pqos_cap_get(&p_cap, &p_cpu);
     if (ret != PQOS_RETVAL_OK) {
@@ -22,12 +22,18 @@ CacheDriver::CacheDriver() {
     }
     // check CMT capability and CPU info pointer
 
-    ret = pqos_l3ca_get_min_cbm_bits(&min_bits);
+    ret = -1;
+    const struct pqos_capability *l3ca = nullptr;
+    (void)pqos_cap_get_type(p_cap, PQOS_CAP_TYPE_L3CA, &l3ca);
+    print_log("[CACHEDRIVER] num_ways: %u", l3ca->u.l3ca->num_ways);
+    print_log("[CACHEDRIVER] num_classes: %u", l3ca->u.l3ca->num_classes);
+    print_log("[CACHEDRIVER] way_size: %u", l3ca->u.l3ca->way_size);
+    min_bits = l3ca->u.l3ca->num_ways;
+    ret = PQOS_RETVAL_OK;
+
     // min_bits should be 8/16/32 for most machines
 
-    if (ret == PQOS_RETVAL_RESOURCE) {
-        print_err("[CACHEDRIVER] can't determine the min_bits for CLOS.");
-    } else if (ret != PQOS_RETVAL_OK) {
+    if (ret != PQOS_RETVAL_OK) {
         print_err("[CACHEDRIVER] error getting min_bits for CLOS.");
     } else {
         init_masks();
@@ -38,13 +44,18 @@ CacheDriver::CacheDriver() {
     if (!intel_fini() || ret != PQOS_RETVAL_OK) {
         exit(-1);
     }
+
+    print_log("[CACHEDRIVER] LC_mask:0x%5x BE_mask: 0x%05x sys_mask:0x%05x "
+              "min_bits:%d",
+              LC_mask, BE_mask, sys_mask, min_bits);
+    print_log("[CACHEDRIVER] inited.");
 }
 
 void CacheDriver::init_masks() {
     sys_bits = min_bits / 8;
     BE_bits = 0;
     LC_bits = min_bits - sys_bits;
-    
+
     update_masks();
 }
 
@@ -66,7 +77,7 @@ bool CacheDriver::update_association(size_t BE_core_num, size_t sys_core_num,
         if (ret != PQOS_RETVAL_OK) {
             print_err("[CACHEDRIVER] update_association() setting allocation "
                       "class of service "
-                      "association failed.\n");
+                      "association failed.");
             return false;
         }
     }
@@ -86,11 +97,18 @@ bool CacheDriver::update_allocation() {
     }
     unsigned sock_count, *sockets = NULL;
     const struct pqos_cpuinfo *p_cpu = NULL;
+    const struct pqos_cap *p_cap = NULL;
+
+    int ret = pqos_cap_get(&p_cap, &p_cpu);
+    if (ret != PQOS_RETVAL_OK) {
+        print_err("[CACHEDRIVER] error retrieving PQoS capabilities!");
+        return false;
+    }
 
     sockets = pqos_cpu_get_sockets(p_cpu, &sock_count);
     if (sockets == NULL) {
         print_err("[CACHEDRIVER] update_allocation() error retrieving CPU "
-                  "socket information.\n");
+                  "socket information.");
         return false;
     }
 
@@ -108,9 +126,10 @@ bool CacheDriver::update_allocation() {
     tab[2].cdp = 0;
     tab[2].u.ways_mask = LC_mask;
 
-    int ret = pqos_l3ca_set(*sockets, 3, tab);
+    ret = pqos_l3ca_set(*sockets, 3, tab);
     if (ret != PQOS_RETVAL_OK) {
-        print_err("[CACHEDRIVER] update_allocation() error setting CLOS masks.");
+        print_err(
+            "[CACHEDRIVER] update_allocation() error setting CLOS masks.");
     }
 
     if (!intel_fini()) {
@@ -170,18 +189,18 @@ void CacheDriver::update_masks() {
      */
 
     uint64_t mask = 0;
-    for(size_t i = 0; i < sys_bits; ++i)
+    for (size_t i = 0; i < sys_bits; ++i)
         mask = (mask << 1) + 1;
     sys_mask = mask;
 
     mask = 0;
-    for(size_t i = 0; i < LC_bits; ++i) 
+    for (size_t i = 0; i < LC_bits; ++i)
         mask = (mask << 1) + 1;
     mask = mask << sys_bits;
     LC_mask = mask;
 
     mask = 0;
-    for(size_t i = 0; i < BE_bits; ++i)
+    for (size_t i = 0; i < BE_bits; ++i)
         mask = (mask << 1) + 1;
     mask = mask << (sys_bits + LC_bits);
     BE_mask = mask;

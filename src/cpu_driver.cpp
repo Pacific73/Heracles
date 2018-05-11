@@ -64,7 +64,15 @@ bool CpuDriver::init_core_num() {
     }
 
     unsigned *sockets, sock_count;
-    pqos_cpuinfo *p_cpu = NULL;
+    const struct pqos_cpuinfo *p_cpu = NULL;
+    const struct pqos_cap *p_cap = NULL;
+
+    int ret = pqos_cap_get(&p_cap, &p_cpu);
+    if (ret != PQOS_RETVAL_OK) {
+        print_err("[CPUDRIVER] error retrieving PQoS capabilities!\n");
+        return false;
+    }
+
     sockets = pqos_cpu_get_sockets(p_cpu, &sock_count);
     if (sockets == NULL) {
         print_err("[CPUDRIVER] error retrieving CPU socket information.");
@@ -92,14 +100,15 @@ bool CpuDriver::init_core_num() {
     assert(total_cores <= lcount);
     assert(total_cores > sys_cores + 2);
 
+    if (!intel_fini()) {
+        return false;
+    }
+
     if (!cc_d->update_association(BE_cores, sys_cores, total_cores)) {
         return false;
     }
     // set core_num and check bounds, update core CLOS mapping
 
-    if (!intel_fini()) {
-        return false;
-    }
     return true;
 }
 
@@ -113,7 +122,7 @@ bool CpuDriver::set_cores_for_pid(size_t type, size_t left, size_t right) {
         return false;
 
     std::ofstream proc;
-    proc.open((p + "/procs").c_str(), std::ios::out);
+    proc.open((p + "/cgroup.procs").c_str(), std::ios::out);
     if (!proc) {
         print_err("[CPU_DRIVER] can't echo to cpuset.procs file.");
         return false;
@@ -122,7 +131,7 @@ bool CpuDriver::set_cores_for_pid(size_t type, size_t left, size_t right) {
     proc.close();
 
     std::ofstream cpu_file;
-    cpu_file.open((p + "/cpus").c_str(), std::ios::out);
+    cpu_file.open((p + "/cpuset.cpus").c_str(), std::ios::out);
     if (!cpu_file) {
         print_err("[CPU_DRIVER] can't echo to cpuset.cpus file.");
         return false;
@@ -131,7 +140,7 @@ bool CpuDriver::set_cores_for_pid(size_t type, size_t left, size_t right) {
     cpu_file.close();
 
     std::ofstream ex_file;
-    ex_file.open((p + "/cpu_exclusive").c_str(), std::ios::out);
+    ex_file.open((p + "/cpuset.cpu_exclusive").c_str(), std::ios::out);
     if (!ex_file) {
         print_err("[CPURDRIVER] can't echo to cpuset.exclusive file.");
         return false;
@@ -159,31 +168,31 @@ bool CpuDriver::update() {
         return false;
     }
     if (!cc_d->update_association(BE_cores, sys_cores, total_cores)) {
-        print_err("[CPU_DRIVER] update() init cache_driver failed.");
-        exit(-1);
+        print_err("[CPU_DRIVER] update() update association error.");
+        return false;
     }
     return true;
 }
 
-void CpuDriver::clear() {
-    BE_cores = 0;
-    update();
+bool set_new_BE_task(pid_t pid) {
+
 }
 
 bool CpuDriver::BE_cores_inc(size_t inc) {
+
+    pthread_mutex_lock(&mutex);
+
     size_t tmp = BE_cores;
     if (BE_cores + inc >= total_cores - sys_cores - 1) {
         return false;
     }
 
-    pthread_mutex_lock(&mutex);
     BE_cores += inc;
-    pthread_mutex_unlock(&mutex);
 
     if (update()) {
+        pthread_mutex_unlock(&mutex);
         return true;
     } else {
-        pthread_mutex_lock(&mutex);
         BE_cores = tmp;
         pthread_mutex_unlock(&mutex);
         return false;
@@ -191,22 +200,27 @@ bool CpuDriver::BE_cores_inc(size_t inc) {
 }
 
 bool CpuDriver::BE_cores_dec(size_t dec) {
-    size_t tmp = BE_cores;
-
     pthread_mutex_lock(&mutex);
+    size_t tmp = BE_cores;
+    
     if (dec >= BE_cores - sys_cores - 1) {
         BE_cores = 0;
     } else {
         BE_cores -= dec;
     }
-    pthread_mutex_unlock(&mutex);
-
+    
     if (update()) {
+        pthread_mutex_unlock(&mutex);
         return true;
     } else {
-        pthread_mutex_lock(&mutex);
         BE_cores = tmp;
         pthread_mutex_unlock(&mutex);
         return false;
     }
 }
+
+void CpuDriver::clear() {
+    BE_cores = 0;
+    update();
+}
+
