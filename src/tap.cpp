@@ -62,16 +62,21 @@ void Tap::cool_down_little() {
 }
 
 int Tap::run() {
+
+    struct timespec ts;
+    ts.tv_sec = 1;
+    ts.tv_nsec = 0;
+
     while (true) {
-        if (_BE_pid == -1) {
-            std::string command = db_d->next_command();
-            if (command == "") {
+        if (_BE_pid == -1 && _state == TAPSTATE::ENABLED) {
+            Task task = db_d->next_task();
+            if (!task.complete) {
                 print_log("[TAP] no more ready BE tasks! Heracles will exit.");
                 t_c->sys_exit();
                 break;
                 // there's no more "ready" BE tasks and system shall exit.
             }
-            print_log("[TAP] new BE task: %s", command.c_str());
+            print_log("[TAP] new BE task: %s", task.program);
 
             pid_t pid = fork();
             // else fork new process and exec a new BE task
@@ -82,6 +87,7 @@ int Tap::run() {
             } else if (pid > 0) {
                 _BE_pid = pid;
                 int status;
+                cm_c->set_new_BE_task(pid);
                 print_log("[TAP] waiting for BE(pid=%d) to be finished...", pid);
                 waitpid(pid, &status, 0);
                 print_log("[TAP] pid %d finished.", pid);
@@ -89,13 +95,12 @@ int Tap::run() {
                 // parent process: heracles
             } else if (pid == 0) {
                 print_log("[BE] new task executing...");
-                execl("/bin/sh", "sh", "-c", command.c_str(), (char *)0);
-                print_err("[BE] YOU SHOULDN'T SEE THIS MESSAGE!");
+                execvp(task.program, task.argv.data());
+                print_err("[BE] you have input the wrong command!");
+                exit(-1);
                 // child process: exec shell command
             }
-        } else {
-            print_err("[TAP] BE_pid != -1 before heracles assign a new task!");
-            break;
         }
+        nanosleep(&ts, nullptr);
     }    
 }

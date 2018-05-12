@@ -28,6 +28,7 @@ CpuDriver::CpuDriver(Tap *t, CacheDriver *cd) : tap(t), cc_d(cd) {
         print_err("[CPU_DRIVER] CpuDriver() init update failed.");
         exit(-1);
     }
+    // set
 
     if (!cc_d->update_association(BE_cores, sys_cores, total_cores)) {
         print_err("[CPU_DRIVER] CpuDriver() init cache_driver failed.");
@@ -174,8 +175,12 @@ bool CpuDriver::update() {
     return true;
 }
 
-bool set_new_BE_task(pid_t pid) {
+bool CpuDriver::set_new_BE_task(pid_t pid) {
+    pthread_mutex_lock(&mutex);
+    BE_pid = pid;
+    pthread_mutex_unlock(&mutex);
 
+    return BE_cores_inc(1);   
 }
 
 bool CpuDriver::BE_cores_inc(size_t inc) {

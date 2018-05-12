@@ -22,7 +22,7 @@ double MemoryDriver::measure_bw(size_t lower, size_t upper) {
     if (ret != PQOS_RETVAL_OK) {
         print_err(
             "[MEMORYDRIVER] measure_bw() error retrieving PQoS capabilities.");
-        return 0;
+        return -1;
     }
     (void)pqos_cap_get_type(p_cap, PQOS_CAP_TYPE_MON, &cap_mon);
     // get cpu info and capability info
@@ -51,7 +51,7 @@ double MemoryDriver::measure_bw(size_t lower, size_t upper) {
         if (ret != PQOS_RETVAL_OK) {
             print_err("[MEMORYDRIVER] measure_bw() monitoring start error "
                          "on core %u, status %d.", lcore, ret);
-            return 0;
+            return -1;
         }
     }
     // start monitoring
@@ -95,12 +95,12 @@ double MemoryDriver::measure_bw(size_t lower, size_t upper) {
         ret = pqos_mon_stop(m_mon_grps[i]);
         if (ret != PQOS_RETVAL_OK) {
             print_err("[MEMORYDRIVER] measure_bw() monitoring stop error.");
-            return 0;
+            return -1;
         }
     }
 
     if (!intel_fini()) {
-        return 0;
+        return -1;
     }
     return total_bw;
 }
@@ -109,7 +109,7 @@ double MemoryDriver::measure_dram_bw() {
     double res;
     size_t lower = 0;
     size_t upper = cpu_d->total_core_num() - 1;
-    if ((res = measure_bw(lower, upper)) == 0) {
+    if ((res = measure_bw(lower, upper)) == -1) {
         print_err("[MEMORYDRIVER] measure_dram_bw() error.");
         return 0;
     }

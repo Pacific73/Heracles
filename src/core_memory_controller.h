@@ -40,6 +40,8 @@ class CoreMemoryController {
 
     int run();
 
+    bool set_new_BE_task(pid_t pid);
+
     void clear();
 };
 

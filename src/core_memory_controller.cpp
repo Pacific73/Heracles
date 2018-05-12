@@ -104,3 +104,8 @@ void CoreMemoryController::clear() {
     mm_d->clear();
     cc_d->clear();
 }
+
+bool CoreMemoryController::set_new_BE_task(pid_t pid) {
+    cpu_d->set_new_BE_task(pid);
+    return true;
+}

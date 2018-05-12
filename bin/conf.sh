@@ -5,7 +5,7 @@ HERACLES_MAX_LATENCY_FILE=/home/zcy/tailbench/tailbench-v0.9/xapian/lc.latency.s
 HERACLES_LOAD_FILE=/home/zcy/tailbench/tailbench-v0.9/xapian/lc.load.cur
 HERACLES_MAX_LOAD_FILE=/home/zcy/tailbench/tailbench-v0.9/xapian/lc.load.max
 
-HERACLES_DRAM_LIMIT=1024
+HERACLES_DRAM_LIMIT=10240
 
 CORE_MEMORY_SLEEP_TIME=2
 

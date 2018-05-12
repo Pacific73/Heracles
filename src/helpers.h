@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <sstream>
+#include <vector>
 
 #define OPT_LC 0
 #define OPT_BE 1
@@ -27,6 +28,8 @@ inline static double bytes_to_kb(const double bytes) { return bytes / 1024.0; }
 inline static double bytes_to_mb(const double bytes) {
     return bytes / (1024.0 * 1024.0);
 }
+
+void split_string(const std::string& s, std::vector<std::string>& v, const std::string& c);
 
 template <typename T> static T get_opt(const char *name, T defVal) {
     const char *opt = getenv(name);

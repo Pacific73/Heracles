@@ -8,10 +8,10 @@ DatabaseDriver::DatabaseDriver() {
     print_log("[DBDRIVER] inited.");
 }
 
-std::string DatabaseDriver::next_command() {
+Task DatabaseDriver::next_task() {
     sqlite3 *db;
     int res;
-    std::string command = "";
+    Task task;
 
     res = sqlite3_open(path.c_str(), &db);
     if (res) {
@@ -31,18 +31,29 @@ std::string DatabaseDriver::next_command() {
         std::string msg = std::string("[DBDRIVER] SQL select error: ") + errmsg;
         print_err(msg.c_str());
         sqlite3_free(errmsg);
-        return command;
+        return task;
     }
 
-    assert(col == 0 || col == 3);
+    assert(col == 0 || col == 4);
     assert(row == 0 || row == 1);
 
     if (row == 1) {
-        command = result[4];
+        task.program = result[5];
+        task.argv.push_back(task.program);
+
+        std::string params(result[6]);
+        split_string(params, task.v, " ");
+        size_t para_cnt = task.v.size();
+        for (size_t i = 0; i < para_cnt; ++i) {
+            task.argv.push_back((char*)task.v[i].c_str());
+        }
+        task.argv.push_back(nullptr);
+
+        task.complete = true;
     }
 
     sqlite3_close(db);
-    return command;
+    return task;
 }
 
 void DatabaseDriver::task_finish() {
