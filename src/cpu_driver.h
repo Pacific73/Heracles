@@ -9,6 +9,8 @@ class CpuDriver {
   private:
     std::string path;
 
+    std::string mem_data;
+
     Tap *tap;
     CacheDriver *cc_d;
 
@@ -25,9 +27,11 @@ class CpuDriver {
 
     bool init_core_num();
 
+    bool init_mem_data();
+
     bool set_cores_for_pid(size_t type, size_t left, size_t right);
 
-    bool update();
+    bool update(bool inc = true);
 
   public:
     CpuDriver(Tap *t, CacheDriver* cd);

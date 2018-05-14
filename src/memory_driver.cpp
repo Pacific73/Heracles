@@ -66,7 +66,7 @@ double MemoryDriver::measure_bw(size_t lower, size_t upper) {
 
     timespec ts;
     ts.tv_sec = 0;
-    ts.tv_nsec = 50000000;
+    ts.tv_nsec = 20000000;
     nanosleep(&ts, nullptr);
     // sleep 0.05s to accumulate data
 
@@ -82,8 +82,8 @@ double MemoryDriver::measure_bw(size_t lower, size_t upper) {
     for (size_t i = 0; i < core_cnt; ++i) {
         const struct pqos_event_values *pv = &m_mon_grps[i]->values;
         double llc = bytes_to_kb(pv->llc);
-        double mbr = bytes_to_mb(pv->mbm_remote_delta) * 20;
-        double mbl = bytes_to_mb(pv->mbm_local_delta) * 20;
+        double mbr = bytes_to_mb(pv->mbm_remote_delta) * 5;
+        double mbl = bytes_to_mb(pv->mbm_local_delta) * 5;
         total_bw += mbl;
         if (is_numa) {
             total_bw += mbr;

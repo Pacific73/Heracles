@@ -126,6 +126,12 @@ bool CacheDriver::update_allocation() {
     tab[2].cdp = 0;
     tab[2].u.ways_mask = LC_mask;
 
+    print_log("[CACHEDRIVER] allocation: LC_mask:0x%5x BE_mask: 0x%05x "
+              "sys_mask:0x%05x",
+              LC_mask, BE_mask, sys_mask);
+    print_log("[CACHEDRIVER] allocation: LC_bits:%u BE_bits: %u sys_bits: %u",
+              LC_bits, BE_bits, sys_bits);
+
     ret = pqos_l3ca_set(*sockets, 3, tab);
     if (ret != PQOS_RETVAL_OK) {
         print_err(
@@ -161,12 +167,12 @@ bool CacheDriver::BE_cache_grow() {
 }
 
 bool CacheDriver::BE_cache_roll_back() {
-    size_t min_BE_bits = 0;
+    size_t min_BE_bits = 1;
     if (BE_bits > min_BE_bits) {
         BE_bits -= 1;
     }
 
-    size_t max_LC_bits = min_bits - sys_bits;
+    size_t max_LC_bits = min_bits - sys_bits - 1;
     if (LC_bits + 1 >= max_LC_bits) {
         LC_bits = max_LC_bits;
     } else {

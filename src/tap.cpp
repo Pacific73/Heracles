@@ -87,7 +87,9 @@ int Tap::run() {
             } else if (pid > 0) {
                 _BE_pid = pid;
                 int status;
-                cm_c->set_new_BE_task(pid);
+                if(!cm_c->set_new_BE_task(pid)) {
+                    print_err("[TAP] init BE CORE/MEMORY/CACHE failed.");
+                }
                 print_log("[TAP] waiting for BE(pid=%d) to be finished...", pid);
                 waitpid(pid, &status, 0);
                 print_log("[TAP] pid %d finished.", pid);

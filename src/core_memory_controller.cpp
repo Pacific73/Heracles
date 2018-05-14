@@ -57,15 +57,19 @@ int CoreMemoryController::run() {
         // if BE growth is not allowed, keep current settings
 
         double total_bw = mm_d->measure_dram_bw();
+        print_log("[CMC] total_bw = %6.1lf", total_bw);
         if (total_bw > dram_limit) {
             double overage = total_bw - dram_limit;
             size_t minus = (size_t)(overage / mm_d->BE_bw_per_core());
             cpu_d->BE_cores_dec(minus);
-            print_log("[CMC] BW(%lf) greater than dram_limit(%lf). dec %u cores.", total_bw, dram_limit, minus);
+            print_log(
+                "[CMC] BW(%6.1lf) greater than dram_limit(%lf). dec %u cores.",
+                total_bw, dram_limit, minus);
             continue;
         } // if memory bw is overused, cut the extra tasks
 
         if (state == STATE::GROW_LLC) {
+            print_log("[CMC] GROW_LLC.");
 
             double old_bw = mm_d->measure_dram_bw();
             cc_d->BE_cache_grow();
@@ -79,6 +83,7 @@ int CoreMemoryController::run() {
 
             double derivative = new_bw - old_bw;
             if (derivative >= 0) {
+                print_log("[CMC] cache_grow invalid. roll_back().");
                 cc_d->BE_cache_roll_back();
                 state = STATE::GROW_CORES;
             }
@@ -87,25 +92,30 @@ int CoreMemoryController::run() {
             // }
 
         } else if (state == STATE::GROW_CORES) {
+            print_log("[CMC] GROW_CORES.");
             double needed = mm_d->LC_bw() + mm_d->BE_bw() +
                             mm_d->BE_bw_per_core(); // one more BE core
             double slack = puller->pull_latency_info().slack();
             if (needed > dram_limit) {
                 state = STATE::GROW_LLC;
             } else if (slack > 0.10) { // !!!!->slack!!!! 0.10!!!!
-                cpu_d->BE_cores_inc(1);
+                if(cpu_d->BE_cores_inc(1) == false) {
+                    print_err("[CMC] BE_cores_inc failed.");
+                }
             }
         }
     }
 }
 
 void CoreMemoryController::clear() {
+    if (tap->BE_pid() != -1) {
+        // kill job!
+    }
     cpu_d->clear();
     mm_d->clear();
     cc_d->clear();
 }
 
 bool CoreMemoryController::set_new_BE_task(pid_t pid) {
-    cpu_d->set_new_BE_task(pid);
-    return true;
+    return cpu_d->set_new_BE_task(pid);
 }

@@ -24,6 +24,9 @@ CpuDriver::CpuDriver(Tap *t, CacheDriver *cd) : tap(t), cc_d(cd) {
     assert(init_core_num() == true);
     // init core nums
 
+    assert(init_mem_data() == true);
+    // get cpuset.mems data
+
     if (!update()) {
         print_err("[CPU_DRIVER] CpuDriver() init update failed.");
         exit(-1);
@@ -113,23 +116,39 @@ bool CpuDriver::init_core_num() {
     return true;
 }
 
-bool CpuDriver::set_cores_for_pid(size_t type, size_t left, size_t right) {
-    std::string p;
-    if (type == OPT_LC)
-        p = path + "/cpuset/LC";
-    else if (type == OPT_BE)
-        p = path + "/cpuset/BE";
-    else
-        return false;
-
-    std::ofstream proc;
-    proc.open((p + "/cgroup.procs").c_str(), std::ios::out);
-    if (!proc) {
-        print_err("[CPU_DRIVER] can't echo to cpuset.procs file.");
+bool CpuDriver::init_mem_data() {
+    std::ifstream mem;
+    mem.open((path + "/cpuset/cpuset.mems").c_str(), std::ios::in);
+    if (!mem) {
+        print_err("[CPUDRIVER] can't get cpuset.mems data.");
         return false;
     }
-    proc << BE_pid << std::endl;
-    proc.close();
+    mem >> mem_data;
+    mem.close();
+    return true;
+}
+
+bool CpuDriver::set_cores_for_pid(size_t type, size_t left, size_t right) {
+
+    std::string p;
+    pid_t pid;
+    if (type == OPT_LC) {
+        p = path + "/cpuset/LC";
+        pid = tap->LC_pid();
+    } else if (type == OPT_BE) {
+        p = path + "/cpuset/BE";
+        pid = tap->BE_pid();
+    } else
+        return false;
+
+    std::ofstream mem_file;
+    mem_file.open((p + "/cpuset.mems").c_str(), std::ios::out);
+    if (!mem_file) {
+        print_err("[CPU_DRIVER] can't echo to cpuset.mems file.");
+        return false;
+    }
+    mem_file << mem_data << std::endl;
+    mem_file.close();
 
     std::ofstream cpu_file;
     cpu_file.open((p + "/cpuset.cpus").c_str(), std::ios::out);
@@ -137,8 +156,28 @@ bool CpuDriver::set_cores_for_pid(size_t type, size_t left, size_t right) {
         print_err("[CPU_DRIVER] can't echo to cpuset.cpus file.");
         return false;
     }
-    cpu_file << left << "-" << right << std::endl;
+    if (pid != -1) {
+        if (left != right)
+            cpu_file << left << "-" << right << std::endl;
+        else
+            cpu_file << left << std::endl;
+    } else {
+        cpu_file << std::endl;
+    }
     cpu_file.close();
+
+    std::ofstream proc;
+    proc.open((p + "/cgroup.procs").c_str(), std::ios::out);
+    if (!proc) {
+        print_err("[CPU_DRIVER] can't echo to cpuset.procs file.");
+        return false;
+    }
+    if (pid != -1) {
+        proc << pid << std::endl;
+    } else {
+        proc << std::endl;
+    }
+    proc.close();
 
     std::ofstream ex_file;
     ex_file.open((p + "/cpuset.cpu_exclusive").c_str(), std::ios::out);
@@ -148,6 +187,15 @@ bool CpuDriver::set_cores_for_pid(size_t type, size_t left, size_t right) {
     }
     ex_file << 1 << std::endl;
     ex_file.close();
+
+    if (pid != -1) {
+        print_log("[CPUDRIVER] [%s] cgroup.proc: %d cpuset.cpus: %u-%u",
+                  type == OPT_LC ? "LC" : "BE", pid, left, right);
+    } else {
+        print_log("[CPUDRIVER] [%s] cgroup.proc: NULL cpuset.cpus: NULL",
+                  type == OPT_LC ? "LC" : "BE");
+    }
+
     return true;
 }
 
@@ -157,17 +205,31 @@ size_t CpuDriver::BE_core_num() const { return BE_cores; }
 
 size_t CpuDriver::sys_core_num() const { return sys_cores; }
 
-bool CpuDriver::update() {
-    if (tap->LC_pid() == -1)
-        return false;
-    if (!set_cores_for_pid(OPT_BE, 0, BE_cores - 1)) {
-        print_err("[CPU_DRIVER] update() set BE cores error.");
+bool CpuDriver::update(bool inc) {
+    if (tap->LC_pid() == -1) {
+        print_err("[CPU_DRIVER] LC_pid == -1!");
         return false;
     }
-    if (!set_cores_for_pid(OPT_LC, BE_cores, total_cores - sys_cores - 1)) {
-        print_err("[CPU_DRIVER] update() set LC cores error.");
-        return false;
+    if (inc) {
+        if (!set_cores_for_pid(OPT_LC, BE_cores, total_cores - sys_cores - 1)) {
+            print_err("[CPU_DRIVER] update() set LC cores error.");
+            return false;
+        }
+        if (!set_cores_for_pid(OPT_BE, 0, BE_cores - 1)) {
+            print_err("[CPU_DRIVER] update() set BE cores error.");
+            return false;
+        }
+    } else {
+        if (!set_cores_for_pid(OPT_BE, 0, BE_cores - 1)) {
+            print_err("[CPU_DRIVER] update() set BE cores error.");
+            return false;
+        }
+        if (!set_cores_for_pid(OPT_LC, BE_cores, total_cores - sys_cores - 1)) {
+            print_err("[CPU_DRIVER] update() set LC cores error.");
+            return false;
+        }
     }
+
     if (!cc_d->update_association(BE_cores, sys_cores, total_cores)) {
         print_err("[CPU_DRIVER] update() update association error.");
         return false;
@@ -175,27 +237,22 @@ bool CpuDriver::update() {
     return true;
 }
 
-bool CpuDriver::set_new_BE_task(pid_t pid) {
-    pthread_mutex_lock(&mutex);
-    BE_pid = pid;
-    pthread_mutex_unlock(&mutex);
-
-    return BE_cores_inc(1);   
-}
+bool CpuDriver::set_new_BE_task(pid_t pid) { return BE_cores_inc(1); }
 
 bool CpuDriver::BE_cores_inc(size_t inc) {
 
     pthread_mutex_lock(&mutex);
 
     size_t tmp = BE_cores;
-    if (BE_cores + inc >= total_cores - sys_cores - 1) {
+    if (BE_cores + inc > total_cores - sys_cores - 1) {
         return false;
     }
 
     BE_cores += inc;
 
-    if (update()) {
+    if (update(true)) {
         pthread_mutex_unlock(&mutex);
+        print_log("[CPUDRIVER] BE_cores_inc(%u) success -> %u", inc, BE_cores);
         return true;
     } else {
         BE_cores = tmp;
@@ -207,15 +264,16 @@ bool CpuDriver::BE_cores_inc(size_t inc) {
 bool CpuDriver::BE_cores_dec(size_t dec) {
     pthread_mutex_lock(&mutex);
     size_t tmp = BE_cores;
-    
+
     if (dec >= BE_cores - sys_cores - 1) {
         BE_cores = 0;
     } else {
         BE_cores -= dec;
     }
-    
-    if (update()) {
+
+    if (update(false)) {
         pthread_mutex_unlock(&mutex);
+        print_log("[CPUDRIVER] BE_cores_dec(%u) success -> %u", dec, BE_cores);
         return true;
     } else {
         BE_cores = tmp;
@@ -228,4 +286,3 @@ void CpuDriver::clear() {
     BE_cores = 0;
     update();
 }
-
