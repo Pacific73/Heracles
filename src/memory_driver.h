@@ -20,7 +20,12 @@ class MemoryDriver {
 
     bool is_numa;
 
-    double measure_bw(size_t lower, size_t upper);
+    double BE_bandwidth;
+
+    uint64_t update_time;
+    double *bandwidths;
+
+    bool update();
 
   public:
     MemoryDriver(Tap *t, CpuDriver *cd);

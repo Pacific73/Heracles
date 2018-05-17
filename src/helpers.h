@@ -29,7 +29,11 @@ inline static double bytes_to_mb(const double bytes) {
     return bytes / (1024.0 * 1024.0);
 }
 
-void split_string(const std::string& s, std::vector<std::string>& v, const std::string& c);
+void str_split(const std::string& s, std::vector<std::string>& v, const std::string& c);
+
+std::string str_format(const char *fmt, ...);
+
+uint64_t get_cur_ns();
 
 template <typename T> static T get_opt(const char *name, T defVal) {
     const char *opt = getenv(name);

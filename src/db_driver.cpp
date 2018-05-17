@@ -42,7 +42,7 @@ Task DatabaseDriver::next_task() {
         task.argv.push_back(task.program);
 
         std::string params(result[6]);
-        split_string(params, task.v, " ");
+        str_split(params, task.v, " ");
         size_t para_cnt = task.v.size();
         for (size_t i = 0; i < para_cnt; ++i) {
             task.argv.push_back((char*)task.v[i].c_str());

@@ -14,12 +14,13 @@ private:
     size_t BE_bits;
     size_t sys_bits;
 
-    unsigned int min_bits;
+    uint32_t min_bits;
 
-    void init_masks(); // only LC task running
+    bool init_env();
+    bool init_masks(); // only LC task running
 
     bool update_allocation();
-    void update_masks();
+    bool update_masks();
 
 public:
     CacheDriver();

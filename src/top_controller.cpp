@@ -18,12 +18,9 @@ void TopController::init_config() {
 
 int TopController::run() {
 
-    struct timespec ts;
-    ts.tv_sec = sleep_time;
-    ts.tv_nsec = 0;
-
     while (true) {
-        nanosleep(&ts, nullptr);
+        usleep(sleep_time * 1000000);
+
         if (!update()) {
             return -1;
         }

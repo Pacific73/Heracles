@@ -29,11 +29,8 @@ class CoreMemoryController {
 
     pid_t LC_pid;
 
-    void init_cpu_driver();
-    void init_memory_driver();
-    void init_cache_driver();
-
-    void init_config();
+    bool init_config();
+    bool init_drivers();
 
   public:
     CoreMemoryController(Tap *t, InfoPuller *i);

@@ -23,6 +23,8 @@ class CpuDriver {
 
     pthread_mutex_t mutex;
 
+    bool init_config();
+
     bool init_cgroups_dir();
 
     bool init_core_num();

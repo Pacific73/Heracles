@@ -2,17 +2,20 @@ CXX = g++
 
 LIBDIR ?= ../lib/headers
 
+NET_LIBDIR = -I/usr/lib/llvm-3.7/include -I/usr/include/bcc
+
 LDDIR ?= ../lib/so
 
 CXXFLAGS = -g -Wall -O2 -std=c++11 -I$(LIBDIR) -L$(LDDIR)
 
-LDFLAGS = -lpthread -lsqlite3 -lpqos
+LDFLAGS = -lpthread -lsqlite3 -lpqos -lbcc -lbpf
 
 TARGET = heracles
 
 OBJECTS = main.o top_controller.o core_memory_controller.o \
 		  tap.o info_puller.o helpers.o \
-		  db_driver.o cpu_driver.o memory_driver.o cache_driver.o
+		  db_driver.o cpu_driver.o memory_driver.o cache_driver.o \
+		  network_controller.o network_monitor.o network_driver.o
 
 all: $(TARGET)
 
@@ -21,7 +24,7 @@ $(TARGET): $(OBJECTS)
 	@echo [INFO] Compilation accomplished.
 
 main.o: main.cpp heracles.h
-	$(CXX) $(CXXFLAGS) -o $@ -c $<
+	$(CXX) $(CXXFLAGS) $(NET_LIBDIR) -o $@ -c $<
 
 top_controller.o: top_controller.cpp top_controller.h
 	$(CXX) $(CXXFLAGS) -o $@ -c $<
@@ -46,6 +49,15 @@ cache_driver.o: cache_driver.cpp cache_driver.h
 
 memory_driver.o: memory_driver.cpp memory_driver.h
 	$(CXX) $(CXXFLAGS) -o $@ -c $<
+
+network_controller.o: network_controller.cpp network_controller.h
+	$(CXX) $(CXXFLAGS) $(NET_LIBDIR) -o $@ -c $<
+
+network_monitor.o: network_monitor.cpp network_monitor.h
+	$(CXX) $(CXXFLAGS) $(NET_LIBDIR) -o $@ -c $<
+
+network_driver.o: network_driver.cpp network_driver.h
+	$(CXX) $(CXXFLAGS) $(NET_LIBDIR) -o $@ -c $<
 
 helpers.o: helpers.cpp helpers.h
 	$(CXX) $(CXXFLAGS) -o $@ -c $<

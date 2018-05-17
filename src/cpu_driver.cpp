@@ -12,11 +12,11 @@
 #include <unistd.h>
 
 CpuDriver::CpuDriver(Tap *t, CacheDriver *cd) : tap(t), cc_d(cd) {
-    path = get_opt<std::string>("CGROUPS_DIR", "/sys/fs/cgroups");
-
     if (pthread_mutex_init(&mutex, nullptr) != 0) {
         print_err("[CPUDRIVER] mutex init failed.");
     }
+
+    assert(init_config() == true);
 
     assert(init_cgroups_dir() == true);
     // init cgroups VFS
@@ -37,6 +37,11 @@ CpuDriver::CpuDriver(Tap *t, CacheDriver *cd) : tap(t), cc_d(cd) {
         print_err("[CPU_DRIVER] CpuDriver() init cache_driver failed.");
         exit(-1);
     }
+}
+
+bool CpuDriver::init_config() {
+    path = get_opt<std::string>("CGROUPS_DIR", "/sys/fs/cgroups");
+    return true;
 }
 
 bool CpuDriver::init_cgroups_dir() {
@@ -245,6 +250,7 @@ bool CpuDriver::BE_cores_inc(size_t inc) {
 
     size_t tmp = BE_cores;
     if (BE_cores + inc > total_cores - sys_cores - 1) {
+        pthread_mutex_unlock(&mutex);
         return false;
     }
 
