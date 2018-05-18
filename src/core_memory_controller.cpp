@@ -4,8 +4,8 @@
 
 CoreMemoryController::CoreMemoryController(Tap *t, InfoPuller *i)
     : tap(t), puller(i) {
-    t->set_cm_c(this);
 
+    t->set_cm_c(this);
     state = STATE::GROW_LLC;
 
     assert(init_config() == true);
@@ -28,7 +28,9 @@ bool CoreMemoryController::init_drivers() {
     tap->set_cpu_d(cpu_d);
 
     mm_d = new MemoryDriver(tap, cpu_d);
+    // p.s. init order cannot be changed!
 
+    return true;
 }
 
 int CoreMemoryController::run() {

@@ -13,7 +13,7 @@
 
 CpuDriver::CpuDriver(Tap *t, CacheDriver *cd) : tap(t), cc_d(cd) {
     if (pthread_mutex_init(&mutex, nullptr) != 0) {
-        print_err("[CPUDRIVER] mutex init failed.");
+        print_err("[CPU_DRIVER] mutex init failed.");
     }
 
     assert(init_config() == true);
@@ -78,13 +78,13 @@ bool CpuDriver::init_core_num() {
 
     int ret = pqos_cap_get(&p_cap, &p_cpu);
     if (ret != PQOS_RETVAL_OK) {
-        print_err("[CPUDRIVER] error retrieving PQoS capabilities!\n");
+        print_err("[CPU_DRIVER] error retrieving PQoS capabilities!\n");
         return false;
     }
 
     sockets = pqos_cpu_get_sockets(p_cpu, &sock_count);
     if (sockets == NULL) {
-        print_err("[CPUDRIVER] error retrieving CPU socket information.");
+        print_err("[CPU_DRIVER] error retrieving CPU socket information.");
         return false;
     }
     assert(sock_count >= 1);
@@ -94,7 +94,7 @@ bool CpuDriver::init_core_num() {
     unsigned lcount = 0;
     lcores = pqos_cpu_get_cores(p_cpu, sockets[0], &lcount);
     if (lcores == NULL || lcount == 0) {
-        print_err("[CPUDRIVER] error retrieving core information.");
+        print_err("[CPU_DRIVER] error retrieving core information.");
         free(lcores);
         free(sockets);
         return false;
@@ -125,7 +125,7 @@ bool CpuDriver::init_mem_data() {
     std::ifstream mem;
     mem.open((path + "/cpuset/cpuset.mems").c_str(), std::ios::in);
     if (!mem) {
-        print_err("[CPUDRIVER] can't get cpuset.mems data.");
+        print_err("[CPU_DRIVER] can't get cpuset.mems data.");
         return false;
     }
     mem >> mem_data;
@@ -187,17 +187,17 @@ bool CpuDriver::set_cores_for_pid(size_t type, size_t left, size_t right) {
     std::ofstream ex_file;
     ex_file.open((p + "/cpuset.cpu_exclusive").c_str(), std::ios::out);
     if (!ex_file) {
-        print_err("[CPURDRIVER] can't echo to cpuset.exclusive file.");
+        print_err("[CPU_RDRIVER] can't echo to cpuset.exclusive file.");
         return false;
     }
     ex_file << 1 << std::endl;
     ex_file.close();
 
     if (pid != -1) {
-        print_log("[CPUDRIVER] [%s] cgroup.proc: %d cpuset.cpus: %u-%u",
+        print_log("[CPU_DRIVER] [%s] cgroup.proc: %d cpuset.cpus: %u-%u",
                   type == OPT_LC ? "LC" : "BE", pid, left, right);
     } else {
-        print_log("[CPUDRIVER] [%s] cgroup.proc: NULL cpuset.cpus: NULL",
+        print_log("[CPU_DRIVER] [%s] cgroup.proc: NULL cpuset.cpus: NULL",
                   type == OPT_LC ? "LC" : "BE");
     }
 
@@ -258,7 +258,7 @@ bool CpuDriver::BE_cores_inc(size_t inc) {
 
     if (update(true)) {
         pthread_mutex_unlock(&mutex);
-        print_log("[CPUDRIVER] BE_cores_inc(%u) success -> %u", inc, BE_cores);
+        print_log("[CPU_DRIVER] BE_cores_inc(%u) success -> %u", inc, BE_cores);
         return true;
     } else {
         BE_cores = tmp;
@@ -279,7 +279,7 @@ bool CpuDriver::BE_cores_dec(size_t dec) {
 
     if (update(false)) {
         pthread_mutex_unlock(&mutex);
-        print_log("[CPUDRIVER] BE_cores_dec(%u) success -> %u", dec, BE_cores);
+        print_log("[CPU_DRIVER] BE_cores_dec(%u) success -> %u", dec, BE_cores);
         return true;
     } else {
         BE_cores = tmp;

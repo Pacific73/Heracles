@@ -9,7 +9,7 @@
 
 struct info_t {
     uint32_t classid;
-    char name[500];
+    char name[16];
 };
 
 class NetworkMonitor {

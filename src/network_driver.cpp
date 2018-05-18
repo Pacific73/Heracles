@@ -20,7 +20,7 @@ NetworkDriver::NetworkDriver() {
 bool NetworkDriver::init_config() {
     device = get_opt<std::string>("NIC_NAME", "lo");
     cgroup_path = get_opt<std::string>("CGROUPS_DIR", "/sys/fs/cgroup");
-    total_bw = get_opt<uint64_t>("NET_TOTAL_BANDIWDTH", 1e9);
+    total_bw = get_opt<uint64_t>("NET_TOTAL_BANDWIDTH", 1e9);
     LC_classid = get_opt<uint32_t>("NET_LC_CLASSID", 0x10003);
     BE_classid = get_opt<uint32_t>("NET_BE_CLASSID", 0x10004);
     return true;
@@ -53,7 +53,7 @@ bool NetworkDriver::init_dir() {
 
 bool NetworkDriver::init_classid() {
     uint32_t ids[2] = {LC_classid, BE_classid};
-    std::string tasks = {"LC", "BE"};
+    std::string tasks[2] = {"LC", "BE"};
 
     for (int i = 0; i < 2; ++i) {
         std::ofstream classid_f;
@@ -74,27 +74,27 @@ bool NetworkDriver::init_tc() {
     size_t cnt = 6;
     std::string command[cnt];
 
-    command[0] = str_format("tc qdisc del dev %s root", device);
-    command[1] = str_format("tc qdisc add dev %s root handle 1: htb", device);
+    command[0] = str_format("tc qdisc del dev %s root", device.c_str());
+    command[1] = str_format("tc qdisc add dev %s root handle 1: htb", device.c_str());
     command[2] = str_format(
         "tc class add dev %s parent 1: classid 1: htb rate %llu ceil %llu",
-        device, total_bw, total_bw);
+        device.c_str(), total_bw, total_bw);
     command[3] =
         str_format("tc class add dev %s parent 1: classid 1:%u htb rate %llu",
-                   device, LC_classid % (1 << 16), total_bw);
+                   device.c_str(), LC_classid % (1 << 16), total_bw);
     command[4] =
         str_format("tc class add dev %s parent 1: classid 1:%u htb rate %llu",
-                   device, BE_classid % (1 << 16), total_bw);
+                   device.c_str(), BE_classid % (1 << 16), total_bw);
     command[5] = str_format(
         "tc filter add dev %s protocal ip parent 1:0 prio 1 handle 1: cgroup",
-        device);
+        device.c_str());
 
     for (size_t i = 0; i < cnt; ++i) {
         int res = system(command[i].c_str());
-        if (res != 0) {
-            print_err("[NET_DRIVER] init_tc() error: %s", command[i]);
-            return false;
-        }
+        // if (res != 0) {
+        //     print_err("[NET_DRIVER] init_tc() error: %s", command[i].c_str());
+        //     return false;
+        // }
     }
     return true;
 }
@@ -140,7 +140,7 @@ bool NetworkDriver::set_BE_procs(pid_t pid) {
 bool NetworkDriver::set_BE_bw(uint64_t bw) {
     std::string command;
     command = str_format(
-        "tc class change dev %s parent 1: classid 1:%u htb rate %llu", device,
+        "tc class change dev %s parent 1: classid 1:%u htb rate %llu", device.c_str(),
         BE_classid % (1 << 16), bw);
 
     int res = system(command.c_str());

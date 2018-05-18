@@ -63,11 +63,9 @@ void Tap::cool_down_little() {
 
 int Tap::run() {
 
-    struct timespec ts;
-    ts.tv_sec = 1;
-    ts.tv_nsec = 0;
-
     while (true) {
+        usleep(1000000);
+
         if (_BE_pid == -1 && _state == TAPSTATE::ENABLED) {
             Task task = db_d->next_task();
             if (!task.complete) {
@@ -103,6 +101,6 @@ int Tap::run() {
                 // child process: exec shell command
             }
         }
-        nanosleep(&ts, nullptr);
-    }    
+    }
+    return -1;
 }

@@ -12,16 +12,19 @@
 void *run_cm_ctr(void *p) {
     CoreMemoryController *cm_ctr = reinterpret_cast<CoreMemoryController *>(p);
     cm_ctr->run();
+    return nullptr;
 }
 
 void *run_tap(void *p) {
     Tap *tap = reinterpret_cast<Tap *>(p);
     tap->run();
+    return nullptr;
 }
 
 void *run_net_ctr(void *p) {
     NetworkController *net_ctr = reinterpret_cast<NetworkController *>(p);
     net_ctr->run();
+    return nullptr;
 }
 
 class Heracles {

@@ -9,7 +9,7 @@ NetworkController::NetworkController(Tap *tap) : tap(tap) {
 
     available_bw = total_bw - total_bw / 10;
 
-    print_log("[NET] total_bw: %llu", total_bw);
+    print_log("[NET_CONTROLLER] total_bw: %llu", total_bw);
     print_log("[NET_CONTROLLER] inited.");
 }
 
@@ -35,11 +35,11 @@ void NetworkController::run() {
 
         uint64_t LC_bw = n_m->LC_bytes();
         uint64_t BE_bw = n_m->BE_bytes();
-        print_log("[NET] LC_bw: %llu BE_bw: %llu", LC_bw, BE_bw);
+        print_log("[NET_CONTROLLER] LC_bw: %llu BE_bw: %llu", LC_bw, BE_bw);
 
         uint64_t new_bw = LC_bw < available_bw ? available_bw - LC_bw : 1;
         n_d->set_BE_bw(new_bw);
 
-        print_log("[NET] set new BE_bw: %llu", new_bw);
+        print_log("[NET_CONTROLLER] set new BE_bw: %llu", new_bw);
     }
 }

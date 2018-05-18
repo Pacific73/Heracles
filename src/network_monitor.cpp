@@ -5,6 +5,7 @@
 void *run_monitoring(void *p) {
     NetworkMonitor *monitor = reinterpret_cast<NetworkMonitor *>(p);
     monitor->run();
+    return nullptr;
 }
 
 NetworkMonitor::NetworkMonitor() {
@@ -12,7 +13,11 @@ NetworkMonitor::NetworkMonitor() {
 
     assert(init_config() == true);
 
-    int thread_res = pthread_create(&tid, NULL, run_monitoring, (void *)this);
+    int res = pthread_create(&tid, NULL, run_monitoring, (void *)this);
+    if (res != 0) {
+        print_err("[NET_MONITOR] can't create monitor thread.");
+        exit(-1);
+    }
     pthread_detach(tid);
 
     print_log("[NET_MONITOR] inited.");
@@ -40,6 +45,7 @@ bool NetworkMonitor::init_config() {
     device = get_opt<std::string>("NIC_NAME", "lo");
     LC_classid = get_opt<uint32_t>("NET_LC_CLASSID", 0x10003);
     BE_classid = get_opt<uint32_t>("NET_BE_CLASSID", 0x10004);
+    return true;
 }
 
 NetworkMonitor::~NetworkMonitor() { delete bpf; }
@@ -66,9 +72,9 @@ void NetworkMonitor::run() {
     print_err("[NET_MONITOR] run() ends! error.");
 }
 
-uint64_t NetworkMonitor::LC_bytes() { return class_bytes[LC_classid] * 8; }
+uint64_t NetworkMonitor::LC_bytes() { return class_bytes[LC_classid]; }
 
-uint64_t NetworkMonitor::BE_bytes() { return class_bytes[BE_classid] * 8; }
+uint64_t NetworkMonitor::BE_bytes() { return class_bytes[BE_classid]; }
 
 const std::string NetworkMonitor::BPF_PROGRAM = R"(
 #include <bcc/proto.h>
