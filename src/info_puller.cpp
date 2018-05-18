@@ -26,11 +26,11 @@ void InfoPuller::init_config() {
 
     //mkdir!!!
 
-    latency_path = get_opt("HERACLES_LATENCY_FILE", default_latency_file);
+    latency_path = get_opt<std::string>("HERACLES_LATENCY_FILE", default_latency_file);
     max_latency_path =
-        get_opt("HERACLES_MAX_LATENCY_FILE", default_max_latency_file);
-    load_path = get_opt("HERACLES_LOAD_FILE", default_load_file);
-    max_load_path = get_opt("HERACLES_MAX_LOAD_FILE", default_max_load_file);
+        get_opt<std::string>("HERACLES_MAX_LATENCY_FILE", default_max_latency_file);
+    load_path = get_opt<std::string>("HERACLES_LOAD_FILE", default_load_file);
+    max_load_path = get_opt<std::string>("HERACLES_MAX_LOAD_FILE", default_max_load_file);
 }
 
 InfoPuller::InfoPuller() {

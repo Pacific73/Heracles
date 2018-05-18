@@ -15,7 +15,7 @@ Tap::Tap(pid_t lc_pid) : _state(TAPSTATE::DISABLED) {
     db_d = new DatabaseDriver();
 
     _BE_pid = -1;
-    _LC_pid = (lc_pid == -1) ? get_opt("HERACLES_LC_PID", -1) : lc_pid;
+    _LC_pid = (lc_pid == -1) ? get_opt<pid_t>("HERACLES_LC_PID", -1) : lc_pid;
 
     if (_LC_pid <= 0) {
         print_err("[TAP] can't recognize LC task.");

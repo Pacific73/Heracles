@@ -66,7 +66,6 @@ void NetworkMonitor::run() {
                 class_bytes[it.first.classid] += it.second;
             }
         }
-        print_log("[NET_MONITOR] updated.");
     }
 
     print_err("[NET_MONITOR] run() ends! error.");

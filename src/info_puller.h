@@ -18,8 +18,8 @@ class LatencyInfo {
 
 class LoadInfo {
   private:
-    size_t cur_load;
-    size_t max_load;
+    double cur_load;
+    double max_load;
 
   public:
     friend class InfoPuller;
