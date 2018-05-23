@@ -33,8 +33,8 @@ void NetworkController::run() {
 
         usleep(sleep_time * 1000000);
 
-        uint64_t LC_bw = n_m->LC_bytes();
-        uint64_t BE_bw = n_m->BE_bytes();
+        uint64_t LC_bw = n_m->LC_bits();
+        uint64_t BE_bw = n_m->BE_bits();
         print_log("[NET_CONTROLLER] LC_bw: %llu BE_bw: %llu", LC_bw, BE_bw);
 
         uint64_t new_bw = LC_bw < available_bw ? available_bw - LC_bw : 100;

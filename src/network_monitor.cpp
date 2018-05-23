@@ -71,9 +71,9 @@ void NetworkMonitor::run() {
     print_err("[NET_MONITOR] run() ends! error.");
 }
 
-uint64_t NetworkMonitor::LC_bytes() { return class_bytes[LC_classid]; }
+uint64_t NetworkMonitor::LC_bits() { return class_bytes[LC_classid] * 8; }
 
-uint64_t NetworkMonitor::BE_bytes() { return class_bytes[BE_classid]; }
+uint64_t NetworkMonitor::BE_bits() { return class_bytes[BE_classid] * 8; }
 
 const std::string NetworkMonitor::BPF_PROGRAM = R"(
 #include <bcc/proto.h>
