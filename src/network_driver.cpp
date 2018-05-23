@@ -21,8 +21,8 @@ bool NetworkDriver::init_config() {
     device = get_opt<std::string>("NIC_NAME", "lo");
     cgroup_path = get_opt<std::string>("CGROUPS_DIR", "/sys/fs/cgroup");
     total_bw = get_opt<uint64_t>("NET_TOTAL_BANDWIDTH", 1e9);
-    LC_classid = get_opt<uint32_t>("NET_LC_CLASSID", 0x10003);
-    BE_classid = get_opt<uint32_t>("NET_BE_CLASSID", 0x10004);
+    LC_classid = 0x10003;
+    BE_classid = 0x10004;
     return true;
 }
 
@@ -86,7 +86,7 @@ bool NetworkDriver::init_tc() {
         str_format("tc class add dev %s parent 1: classid 1:%u htb rate %llu",
                    device.c_str(), BE_classid % (1 << 16), total_bw);
     command[5] = str_format(
-        "tc filter add dev %s protocal ip parent 1:0 prio 1 handle 1: cgroup",
+        "tc filter add dev %s protocol ip parent 1:0 prio 1 handle 1: cgroup",
         device.c_str());
 
     for (size_t i = 0; i < cnt; ++i) {

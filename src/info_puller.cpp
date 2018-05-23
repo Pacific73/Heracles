@@ -17,7 +17,7 @@ double LoadInfo::load_percent() {
 }
 
 void InfoPuller::init_config() {
-    std::string prefix = "/home/" + std::string(getlogin()) + "/heracles/";
+    std::string prefix = "/home/zcy/heracles/";
 
     std::string default_latency_file = prefix + "latency_info";
     std::string default_max_latency_file = prefix + "max_latency_info";

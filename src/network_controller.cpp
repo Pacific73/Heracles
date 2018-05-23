@@ -37,7 +37,7 @@ void NetworkController::run() {
         uint64_t BE_bw = n_m->BE_bytes();
         print_log("[NET_CONTROLLER] LC_bw: %llu BE_bw: %llu", LC_bw, BE_bw);
 
-        uint64_t new_bw = LC_bw < available_bw ? available_bw - LC_bw : 1;
+        uint64_t new_bw = LC_bw < available_bw ? available_bw - LC_bw : 100;
         n_d->set_BE_bw(new_bw);
 
         print_log("[NET_CONTROLLER] set new BE_bw: %llu", new_bw);
