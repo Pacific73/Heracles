@@ -33,7 +33,7 @@ class Tap {
 
     pthread_mutex_t mutex;
 
-    void BE_end();
+    void BE_end(int *status);
 
   public:
     Tap(pid_t lc_pid);
@@ -46,13 +46,15 @@ class Tap {
 
     void set_state(TAPSTATE t);
 
-    pid_t BE_pid() const { return _BE_pid; }
+    pid_t BE_pid();
 
-    pid_t LC_pid() const { return _LC_pid; }
+    pid_t LC_pid();
 
-    TAPSTATE state() const { return _state; }
+    TAPSTATE state();
 
     void cool_down_little();
+
+    bool kill_BE();
 
     int run();
 };

@@ -25,13 +25,6 @@ Tap::Tap(pid_t lc_pid) : _state(TAPSTATE::DISABLED) {
     print_log("[TAP] inited.");
 }
 
-void Tap::BE_end() {
-    // clean other drivers' status
-    _BE_pid = -1;
-    cm_c->clear();
-    db_d->task_finish();
-}
-
 void Tap::set_t_c(TopController *tc) {
     pthread_mutex_lock(&mutex);
     t_c = tc;
@@ -53,12 +46,59 @@ void Tap::set_cpu_d(CpuDriver* cpud) {
 void Tap::set_state(TAPSTATE t) {
     pthread_mutex_lock(&mutex);
     _state = t;
+    if(_state == TAPSTATE::DISABLED) {
+        kill_BE();
+    }
     pthread_mutex_unlock(&mutex);
 }
 
 void Tap::cool_down_little() {
     assert(cpu_d != nullptr);
-    cpu_d->BE_cores_dec(2);
+    cpu_d->BE_cores_dec(1);
+}
+
+pid_t Tap::BE_pid() {
+    pthread_mutex_lock(&mutex);
+    pid_t ret = _BE_pid;
+    pthread_mutex_unlock(&mutex);
+    return ret;
+}
+
+pid_t Tap::LC_pid() {
+    pthread_mutex_lock(&mutex);
+    pid_t ret = _LC_pid;
+    pthread_mutex_unlock(&mutex);
+    return ret;
+}
+
+TAPSTATE Tap::state() {
+    pthread_mutex_lock(&mutex);
+    TAPSTATE s = _state;
+    pthread_mutex_unlock(&mutex);
+    return s;
+}
+
+void Tap::BE_end(int *status) {
+    // clean other drivers' status
+    _BE_pid = -1;
+    cm_c->clear();
+    if(WIFEXITED(status)) {
+        db_d->task_finish(true);
+    } else {
+        db_d->task_finish(false);
+    }
+    
+}
+
+bool Tap::kill_BE() {
+    if(_BE_pid != -1) {
+        int ret = kill(_BE_pid, SIGKILL);
+        if(ret) {
+            print_err("[TAP] BE task kill failed.");
+            return false;
+        }
+    }
+    return true;
 }
 
 int Tap::run() {
@@ -70,7 +110,7 @@ int Tap::run() {
             Task task = db_d->next_task();
             if (!task.complete) {
                 print_log("[TAP] no more ready BE tasks! Heracles will exit.");
-                t_c->sys_exit();
+                exit(-1);
                 break;
                 // there's no more "ready" BE tasks and system shall exit.
             }
@@ -91,7 +131,7 @@ int Tap::run() {
                 print_log("[TAP] waiting for BE(pid=%d) to be finished...", pid);
                 waitpid(pid, &status, 0);
                 print_log("[TAP] pid %d finished.", pid);
-                BE_end();
+                BE_end(&status);
                 // parent process: heracles
             } else if (pid == 0) {
                 print_log("[BE] new task executing...");

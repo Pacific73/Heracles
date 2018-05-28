@@ -58,7 +58,7 @@ bool CacheDriver::init_env() {
 }
 
 bool CacheDriver::init_masks() {
-    sys_bits = min_bits / 8;
+    sys_bits = 1;
     BE_bits = 0;
     LC_bits = min_bits - sys_bits;
 
@@ -74,9 +74,9 @@ bool CacheDriver::update_association(size_t BE_core_num, size_t sys_core_num,
     int ret;
     for (size_t i = 0; i < total_core_num; ++i) {
         if (0 <= i && i < BE_core_num) {
-            ret = pqos_alloc_assoc_set(i, LC_CLASS_ID);
-        } else if (BE_core_num <= i && i < total_core_num - sys_core_num) {
             ret = pqos_alloc_assoc_set(i, BE_CLASS_ID);
+        } else if (BE_core_num <= i && i < total_core_num - sys_core_num) {
+            ret = pqos_alloc_assoc_set(i, LC_CLASS_ID);
         } else {
             ret = pqos_alloc_assoc_set(i, SYS_CLASS_ID);
         }

@@ -18,12 +18,9 @@ class TopController {
     InfoPuller* puller;
 
     void init_config();
-    bool update();
 
   public:
     TopController(Tap *t, InfoPuller* i);
-
-    void sys_exit();
 
     int run();
 };

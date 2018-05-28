@@ -56,7 +56,7 @@ Task DatabaseDriver::next_task() {
     return task;
 }
 
-void DatabaseDriver::task_finish() {
+void DatabaseDriver::task_finish(bool is_normal) {
     sqlite3 *db;
     int res;
     char *errmsg = 0;

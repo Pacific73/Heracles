@@ -41,6 +41,7 @@ CpuDriver::CpuDriver(Tap *t, CacheDriver *cd) : tap(t), cc_d(cd) {
 
 bool CpuDriver::init_config() {
     path = get_opt<std::string>("CGROUPS_DIR", "/sys/fs/cgroups");
+    max_BE_cores = get_opt<size_t>("HERACLES_MAX_BE_CORE_NUM", 0);
     return true;
 }
 
@@ -145,6 +146,8 @@ bool CpuDriver::set_cores_for_pid(size_t type, size_t left, size_t right) {
         pid = tap->BE_pid();
     } else
         return false;
+    if (left - 1 == right)
+        pid = -1;
 
     std::ofstream mem_file;
     mem_file.open((p + "/cpuset.mems").c_str(), std::ios::out);
@@ -253,8 +256,11 @@ bool CpuDriver::BE_cores_inc(size_t inc) {
         pthread_mutex_unlock(&mutex);
         return false;
     }
-
-    BE_cores += inc;
+    if (max_BE_cores != 0 && BE_cores + inc > max_BE_cores) {
+        BE_cores = max_BE_cores;
+    } else {
+        BE_cores += inc;
+    }
 
     if (update(true)) {
         pthread_mutex_unlock(&mutex);
@@ -290,5 +296,5 @@ bool CpuDriver::BE_cores_dec(size_t dec) {
 
 void CpuDriver::clear() {
     BE_cores = 0;
-    update();
+    update(false);
 }

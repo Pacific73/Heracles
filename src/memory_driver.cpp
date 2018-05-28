@@ -78,10 +78,7 @@ bool MemoryDriver::update() {
     }
     // pull monitor data for the first time
 
-    timespec ts;
-    ts.tv_sec = 0;
-    ts.tv_nsec = 25000000;
-    nanosleep(&ts, nullptr);
+    usleep(250000);
     // sleep 0.05s to accumulate data
 
     ret = pqos_mon_poll(m_mon_grps, core_cnt);

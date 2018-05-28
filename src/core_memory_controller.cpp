@@ -54,50 +54,83 @@ int CoreMemoryController::run() {
 
         double total_bw = mm_d->measure_dram_bw();
         print_log("[CMC] total_bw = %6.1lf", total_bw);
+        // measure total memory bandwidth
+
         if (total_bw > dram_limit) {
             double overage = total_bw - dram_limit;
             size_t minus = (size_t)(overage / mm_d->BE_bw_per_core());
-            cpu_d->BE_cores_dec(minus);
             print_log(
                 "[CMC] BW(%6.1lf) greater than dram_limit(%lf). dec %u cores.",
                 total_bw, dram_limit, minus);
+
+            if (cpu_d->BE_cores_dec(minus) == false) {
+                print_err("[CMC] BE_cores_dec() failed.");
+            }
             continue;
-        } // if memory bw is overused, cut the extra tasks
+        }
+        // if memory bw is overused, cut the extra tasks
 
         if (state == STATE::GROW_LLC) {
             print_log("[CMC] GROW_LLC.");
+            // GROW_LLC stage.
+
+            double old_slack = puller->pull_latency_info().slack();
+            // pull slack
 
             cc_d->BE_cache_grow();
-            // nanosleep? to wait for CAT take effect
+            usleep(1500000);
 
             double new_bw = mm_d->measure_dram_bw();
+            // grow cache, wait 1 second for it to take effect, measure again.
+            double new_slack = puller->pull_latency_info().slack();
+
             if (new_bw > dram_limit) {
+                print_log("[CMC] cache_growth causes bw overflow. roll_back().");
+                cc_d->BE_cache_roll_back();
                 state = STATE::GROW_CORES;
                 continue;
             }
+            // if cache_growth causes bw overuse, then roll_back() and grow_cores
 
             double derivative = new_bw - total_bw;
             if (derivative >= 0) {
-                print_log("[CMC] cache_grow invalid. roll_back().");
+                print_log("[CMC] cache growth causes bw increasing. roll_back().");
                 cc_d->BE_cache_roll_back();
                 state = STATE::GROW_CORES;
             }
-            // if(!benefit()) {                    // benefit() ???
-            //     state = STATE::GROW_CORES;
-            // }
+            // if cache_growth causes bw increasing, then roll_back() and grow cores
+
+            double diff = new_slack - old_slack;
+            if(diff < -0.3 || new_slack < 0) {
+                print_log("[CMC] cache_growth causes latency explosion. roll_back().");
+                cc_d->BE_cache_roll_back();
+                state = STATE::GROW_CORES;
+            }
+            // if cache_growth causes latency explosion, then roll_back() and grow cores
 
         } else if (state == STATE::GROW_CORES) {
             print_log("[CMC] GROW_CORES.");
+            // GROW_CORES stage.
+
             double needed = mm_d->LC_bw() + mm_d->BE_bw() +
-                            mm_d->BE_bw_per_core(); // one more BE core
+                            mm_d->BE_bw_per_core(); 
             print_log("[CMC] predict BW needed: %6.1lf", needed);
+            // predict the bw after giving one more core to BE.
+
             double slack = puller->pull_latency_info().slack();
+            // pull the slack
+
             if (needed > dram_limit) {
                 state = STATE::GROW_LLC;
-            } else if (slack > 0.10) { // !!!!->slack!!!! 0.10!!!!
-                if(cpu_d->BE_cores_inc(1) == false) {
-                    print_err("[CMC] BE_cores_inc failed.");
+                // if predicted bw is more than limit, then grow llc.
+
+            } else if (slack > 0.30) {
+                if (cpu_d->BE_cores_inc(1) == false) {
+                    print_err("[CMC] BE_cores_inc() failed.");
+                } else {
+                    state = STATE::GROW_LLC;
                 }
+                // if slack > 30%, then give one more core to BE.
             }
         }
     }
@@ -105,7 +138,7 @@ int CoreMemoryController::run() {
 
 void CoreMemoryController::clear() {
     if (tap->BE_pid() != -1) {
-        // kill job!
+        tap->kill_BE();
     }
     cpu_d->clear();
     mm_d->clear();

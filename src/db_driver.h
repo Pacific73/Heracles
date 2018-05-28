@@ -21,7 +21,7 @@ class DatabaseDriver {
   public:
     DatabaseDriver();
     Task next_task();
-    void task_finish();
+    void task_finish(bool is_normal);
 };
 
 #endif

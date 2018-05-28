@@ -35,11 +35,10 @@ void NetworkController::run() {
 
         uint64_t LC_bw = n_m->LC_bits();
         uint64_t BE_bw = n_m->BE_bits();
-        print_log("[NET_CONTROLLER] LC_bw: %llu BE_bw: %llu", LC_bw, BE_bw);
+        
 
         uint64_t new_bw = LC_bw < available_bw ? available_bw - LC_bw : 100;
         n_d->set_BE_bw(new_bw);
-
-        print_log("[NET_CONTROLLER] set new BE_bw: %llu", new_bw);
+        print_log("[NET_CONTROLLER] LC_bw: %llu | BE_bw: %llu | new_BE_bw: %llu", LC_bw, BE_bw, new_bw);
     }
 }
