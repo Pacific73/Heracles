@@ -38,6 +38,10 @@ int CoreMemoryController::run() {
     while (true) {
         usleep(sleep_time * 1000000);
 
+        double total_bw = mm_d->measure_dram_bw();
+        print_log("[CMC] total_bw = %6.1lf", total_bw);
+        // measure total memory bandwidth
+
         if (tap->BE_pid() == -1 || tap->state() == TAPSTATE::DISABLED) {
             print_log("[CMC] tap disabled detected. clearing...");
             clear();
@@ -51,10 +55,6 @@ int CoreMemoryController::run() {
             continue;
         }
         // if BE growth is not allowed, keep current settings
-
-        double total_bw = mm_d->measure_dram_bw();
-        print_log("[CMC] total_bw = %6.1lf", total_bw);
-        // measure total memory bandwidth
 
         if (total_bw > dram_limit) {
             double overage = total_bw - dram_limit;
@@ -97,14 +97,16 @@ int CoreMemoryController::run() {
                 print_log("[CMC] cache growth causes bw increasing. roll_back().");
                 cc_d->BE_cache_roll_back();
                 state = STATE::GROW_CORES;
+                continue;
             }
             // if cache_growth causes bw increasing, then roll_back() and grow cores
 
             double diff = new_slack - old_slack;
-            if(diff < -0.3 || new_slack < 0) {
+            if(diff < -0.15 || new_slack < 0) {
                 print_log("[CMC] cache_growth causes latency explosion. roll_back().");
                 cc_d->BE_cache_roll_back();
                 state = STATE::GROW_CORES;
+                continue;
             }
             // if cache_growth causes latency explosion, then roll_back() and grow cores
 

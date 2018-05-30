@@ -256,6 +256,7 @@ bool CpuDriver::BE_cores_inc(size_t inc) {
         pthread_mutex_unlock(&mutex);
         return false;
     }
+    
     if (max_BE_cores != 0 && BE_cores + inc > max_BE_cores) {
         BE_cores = max_BE_cores;
     } else {
