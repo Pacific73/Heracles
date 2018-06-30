@@ -10,6 +10,7 @@ class TopController {
   private:
 
     time_t sleep_time;
+    time_t cooling_time;
     double disable_bound;
     double enable_bound;
     double slow_BE_bound;
@@ -18,6 +19,7 @@ class TopController {
     InfoPuller* puller;
 
     void init_config();
+    // init configs
 
   public:
     TopController(Tap *t, InfoPuller* i);

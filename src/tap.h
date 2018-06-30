@@ -32,8 +32,10 @@ class Tap {
     pid_t _BE_pid;
 
     pthread_mutex_t mutex;
+    // for synchronization
 
     void BE_end(int *status);
+    // when BE ends, do some updates.
 
   public:
     Tap(pid_t lc_pid);

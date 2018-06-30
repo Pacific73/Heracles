@@ -127,7 +127,7 @@ int CoreMemoryController::run() {
                 // if predicted bw is more than limit, then grow llc.
 
             } else if (slack > 0.30) {
-                if (cpu_d->BE_cores_inc(1) == false) {
+                if (cpu_d->grow_safe() && cpu_d->BE_cores_inc(1) == false) {
                     print_err("[CMC] BE_cores_inc() failed.");
                 } else {
                     state = STATE::GROW_LLC;

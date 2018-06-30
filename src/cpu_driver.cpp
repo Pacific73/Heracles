@@ -295,6 +295,10 @@ bool CpuDriver::BE_cores_dec(size_t dec) {
     }
 }
 
+bool CpuDriver::grow_safe() {
+    return true;
+}
+
 void CpuDriver::clear() {
     BE_cores = 0;
     update(false);

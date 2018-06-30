@@ -51,6 +51,8 @@ class CpuDriver {
 
     bool BE_cores_dec(size_t dec); // bound check
 
+    bool grow_safe();
+
     void clear();
 };
 

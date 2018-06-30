@@ -11,6 +11,7 @@ TopController::TopController(Tap *t, InfoPuller *i) : tap(t), puller(i) {
 
 void TopController::init_config() {
     sleep_time = get_opt<time_t>("TOP_SLEEP_TIME", 5);
+    cooling_time = get_opt<time_t>("TOP_COOLING_TIME", 5);
     disable_bound = get_opt<double>("TOP_LOAD_DISABLE_BOUND", 0.8);
     enable_bound = get_opt<double>("TOP_LOAD_ENABLE_BOUND", 0.6);
     slow_BE_bound = get_opt<double>("TOP_SLOW_BE_BOUND", 0.1);
@@ -32,7 +33,7 @@ int TopController::run() {
             disable_checker++;
             if (disable_checker > 1) {
                 tap->set_state(TAPSTATE::DISABLED);
-                // enter_cooling_down()...
+                usleep(cooling_time * 1000000);
                 print_log("[TOP] slack < 0. disable BE. cooling down...");
             }
 
